@@ -65,7 +65,7 @@ board.printEdges();
 
 function startGame() {
   myGameArea.start();
-  let myGamePiece = new component(30, 30, "red", 10, 120);
+  // let myGamePiece = new component(30, 30, "red", 10, 120);
 }
 
 function component(width, height, color, x, y) {
@@ -74,6 +74,33 @@ function component(width, height, color, x, y) {
   this.x = x;
   this.y = y;
   const ctx = myGameArea.context;
+  ctx.strokeRect(110,10,100,100);
+  ctx.strokeRect(210,10,100,100);
+  ctx.strokeRect(10,110,100,100);
+  ctx.strokeRect(110,110,100,100);
+  ctx.strokeRect(210,110,100,100);
+  ctx.strokeRect(10,210,100,100);
+  ctx.strokeRect(110,210,100,100);
+  ctx.strokeRect(210,210,100,100);
+  ctx.strokeRect(310,210,100,100);
+  ctx.strokeRect(10,310,100,100);
+  ctx.strokeRect(110,310,100,100);
+  ctx.strokeRect(210,310,100,100);
+  ctx.strokeRect(310,310,100,100);
+  ctx.strokeRect(10,410,100,100);
+  ctx.strokeRect(110,410,100,100);
+  ctx.strokeRect(210,410,100,100);
+  ctx.strokeRect(310,410,100,100);
+  ctx.strokeRect(10,510,100,100);
+  ctx.strokeRect(110,510,100,100);
+  ctx.strokeRect(210,510,100,100);
+  ctx.strokeRect(310,510,100,100);
+  ctx.strokeRect(110,610,100,100);
+  ctx.strokeRect(210,610,100,100);
+  ctx.strokeRect(310,610,100,100);
+  ctx.strokeRect(110,710,100,100);
+  ctx.strokeRect(210,710,100,100);
+
   ctx.fillStyle = color;
   ctx.fillRect(this.x, this.y, this.width, this.height);
 }
