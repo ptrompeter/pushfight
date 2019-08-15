@@ -49,7 +49,7 @@ const nodes = ["a1","a2","b1","b2","c1","c2","d1","d2"];
 for (var node of nodes){
   board.addNode(node);
 }
-board.printNodes();
+
 board.addEdge("a1", "a2");
 board.addEdge("a1", "b1");
 board.addEdge("b1", "b2");
@@ -60,8 +60,6 @@ board.addEdge("d1", "d2");
 board.addEdge("a2", "b2");
 board.addEdge("b2", "c2");
 board.addEdge("c2", "d2");
-
-board.printEdges();
 
 //Starting work on a canvas element to plug in here.  A re-org will be needed.
 const canvas = document.getElementById("canvas");
@@ -86,6 +84,61 @@ const boxes = [
     y: 210
   }
 ];
+//return an object with a sub-object for each square on a standard board
+function standardBoard(){
+  const board = {}
+  const columns = "abcd"
+  //define function to generate board edges
+  function makeEdges(column, iter, name) {
+    // console.log(column, iter, name);
+    try {
+      let adjacentSquare = columns[columns.indexOf(column) - 1] + iter.toString();
+      if (board[adjacentSquare]){
+        board[name].edges.push(adjacentSquare);
+        board[adjacentSquare].edges.push(name);
+      }
+    }
+    catch(error) {
+      console.log(error);
+    }
+    finally {
+      try {
+        let adjacentSquare = column + (iter - 1).toString();
+        if (board[adjacentSquare]){
+          board[name].edges.push(adjacentSquare);
+          board[adjacentSquare].edges.push(name);
+        }
+      }
+      catch(error) {
+        console.log(error);
+      }
+    }
+
+  }
+  //define function to make a column of the board
+  function makeBoxesByColumn(column, topRow, bottomRow){
+    for (let i = topRow; i < bottomRow; i++) {
+      let name = column + i.toString();
+      board[name] = {
+        width: 50,
+        height: 50,
+        color: "black",
+        x: (columns.indexOf(column) * 50 + 50),
+        y: (i * 50 + 50),
+        name: name,
+        edges: []
+      }
+      makeEdges(column, i, name);
+
+    }
+  }
+  makeBoxesByColumn("a", 1, 6);
+  makeBoxesByColumn("b", 0, 8);
+  makeBoxesByColumn("c", 0, 8);
+  makeBoxesByColumn("d", 2, 7);
+  console.log("board: ", board);
+  return board;
+}
 
 function startGame() {
   myGameArea.start();
@@ -149,4 +202,6 @@ canvas.addEventListener('click', (e) => {
   }
 })
 
+//Adding a standardBoard call here to test.
+standardBoard();
 startGame();
