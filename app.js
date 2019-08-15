@@ -2,7 +2,8 @@
 
 //Starting work on a canvas element to plug in here.  A re-org will be needed.
 const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext('2d')
+const ctx = canvas.getContext('2d');
+const board = standardBoard();
 
 //working on making clickable boxes.  Step one seems like a list of boxes
 const boxes = [
@@ -29,7 +30,6 @@ function standardBoard(){
   const columns = "abcd"
   //define function to generate board edges
   function makeEdges(column, iter, name) {
-    // console.log(column, iter, name);
     try {
       let adjacentSquare = columns[columns.indexOf(column) - 1] + iter.toString();
       if (board[adjacentSquare]){
@@ -86,8 +86,9 @@ function startGame() {
   // let boxTwo = makeBoardRegion(100, 50, "black", 210, 210, "boxTwo");
 
   //substituting fixed boxes for iterating over my list.
-  for (var box of boxes){
-    makeBoardRegion(box.width, box.height, box.color, box.x, box.y, box.name);
+
+  for (var key of Object.keys(board)) {
+    makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
   }
 }
 
@@ -124,10 +125,8 @@ var myGameArea = {
 //adding a function to detect intersection between a click and my boxes
 function isIntersect(point, box) {
   if (box.x <= point.x && point.x <= (box.x + box.width) && box.y <= point.y && point.y <= (box.y + box.height)){
-    return box.name
-  }
-  else {
-    return false
+    console.log(box.name);
+    return box.name;
   }
 }
 //adding a canvas event listener that can respond to clicking on boxes
@@ -136,11 +135,10 @@ canvas.addEventListener('click', (e) => {
     x: e.clientX,
     y: e.clientY
   };
-  for (var box of boxes) {
-    console.log(isIntersect(point, box));
+  for (var box of Object.values(board)) {
+    isIntersect(point, box);
   }
 })
 
 //Adding a standardBoard call here to test.
-standardBoard();
 startGame();
