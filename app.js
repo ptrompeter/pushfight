@@ -143,12 +143,17 @@ function isIntersect(point, box) {
 }
 //adding a canvas event listener that can respond to clicking on boxes
 canvas.addEventListener('click', (e) => {
+  let name = ""
   const point = {
     x: e.clientX,
     y: e.clientY
   };
   for (var box of Object.values(board)) {
-    isIntersect(point, box);
+    name = isIntersect(point, box)
+    if (name) {
+      drawWhiteRoundPiece(name);
+      break;
+    };
   }
 })
 
