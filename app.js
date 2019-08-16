@@ -5,25 +5,6 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext('2d');
 const board = standardBoard();
 
-//working on making clickable boxes.  Step one seems like a list of boxes
-const boxes = [
-  {
-    name: "boxOne",
-    width: 50,
-    height: 100,
-    color: "black",
-    x: 10,
-    y: 10
-  },
-  {
-    name: "boxTwo",
-    width: 100,
-    height: 50,
-    color: "black",
-    x: 210,
-    y: 210
-  }
-];
 //return an object with a sub-object for each square on a standard board
 function standardBoard(){
   const board = {}
@@ -81,15 +62,17 @@ function standardBoard(){
 
 function startGame() {
   myGameArea.start();
-  // let myGamePiece = new component(30, 30, "red", 10, 120);
-  // let boxOne = makeBoardRegion(50, 100, "black", 10, 10, "boxOne");
-  // let boxTwo = makeBoardRegion(100, 50, "black", 210, 210, "boxTwo");
 
   //substituting fixed boxes for iterating over my list.
 
   for (var key of Object.keys(board)) {
     makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
   }
+  //Add tests for pieces
+  drawWhiteSquarePiece("b3");
+  drawBrownSquarePiece("b4");
+  drawWhiteRoundPiece("c3");
+  drawBrownRoundPiece("c4");
 }
 
 //Make a function to draw the outlines of empty rectangles.
@@ -100,15 +83,44 @@ function makeBoardRegion(width, height, color, x, y, hitId) {
 
 //this function draws filled rectangles.
 function component(width, height, color, x, y) {
-  this.width = width;
-  this.height = height;
-  this.x = x;
-  this.y = y;
   const ctx = myGameArea.context;
-
-
   ctx.fillStyle = color;
-  ctx.fillRect(this.x, this.y, this.width, this.height);
+  ctx.fillRect(x, y, width, height);
+}
+
+//this function draws a filled, outlined circle.
+function drawCircle(radius, color, x, y){
+  const ctx = myGameArea.context;
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, 2*Math.PI);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+//make a function to draw a white square piece on a space
+function drawWhiteSquarePiece(spaceName) {
+  component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
+  component(30, 30, "#FBD5AC", board[spaceName].x + 10, board[spaceName].y + 10);
+  myGameArea.context.strokeRect(board[spaceName].x + 10, board[spaceName].y + 10, 30, 30);
+}
+//make a function to draw a brown square piece on a space
+function drawBrownSquarePiece(spaceName) {
+  component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
+  component(30, 30, "#915C1E", board[spaceName].x + 10, board[spaceName].y + 10);
+  myGameArea.context.strokeRect(board[spaceName].x + 10, board[spaceName].y + 10, 30, 30);
+}
+
+//make a function to draw a white round piece on a space
+function drawWhiteRoundPiece(spaceName){
+  component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
+  drawCircle(15, "#FBD5AC", board[spaceName].x + 25, board[spaceName].y + 25);
+}
+
+function drawBrownRoundPiece(spaceName){
+  component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
+  drawCircle(15, "#915C1E", board[spaceName].x + 25, board[spaceName].y + 25);
 }
 
 //myGameArea is the variable that holds the context for the canvas element.
