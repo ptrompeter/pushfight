@@ -4,6 +4,29 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext('2d');
 const board = standardBoard();
+const turn = {
+  player: "white",
+  phase: "choosePiece1",
+  movePieceAt: "",
+  movePieceTo: "",
+  piece: ""
+}
+
+const phaseArray = ["choosePiece1", "movePiece1", "choosePiece2", "movePiece2", "push", "endTurn"];
+
+function changePlayer(){
+  turn.player = (turn.player == "white") ? "brown" : "white";
+}
+
+//Move turn.phase forward
+function advanceTurn(){
+  if (turn.phase == "endTurn"){
+    turn.phase = "choosePiece1";
+    changePlayer();
+  } else {
+    turn.phase = phaseArray[phaseArray.indexOf(turn.phase) + 1];
+  }
+}
 
 //return an object with a sub-object for each square on a standard board
 function standardBoard(){
@@ -46,7 +69,8 @@ function standardBoard(){
         x: (columns.indexOf(column) * 50 + 50),
         y: (i * 50 + 50),
         name: name,
-        edges: []
+        edges: [],
+        piece: "none"
       }
       makeEdges(column, i, name);
 
@@ -57,6 +81,7 @@ function standardBoard(){
   makeBoxesByColumn("c", 0, 8);
   makeBoxesByColumn("d", 2, 7);
   console.log("board: ", board);
+
   return board;
 }
 
@@ -68,6 +93,9 @@ function startGame() {
   for (var key of Object.keys(board)) {
     makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
   }
+  //draw side boxes (walls)
+  component(25, 250, "black", 25, 100);
+  component(25, 250, "black", 250, 150);
   //Add tests for pieces
   drawWhiteSquarePiece("b3");
   drawBrownSquarePiece("b4");
@@ -76,7 +104,7 @@ function startGame() {
 }
 
 //Make a function to draw the outlines of empty rectangles.
-function makeBoardRegion(width, height, color, x, y, hitId) {
+function makeBoardRegion(width, height, color, x, y) {
   const ctx = myGameArea.context;
   ctx.strokeRect(x, y, width, height);
 }
@@ -99,28 +127,85 @@ function drawCircle(radius, color, x, y){
   ctx.fill();
 }
 
+//make a function to clear a region and redraw it.
+function clearSpace(spaceName){
+  const target = board[spaceName];
+  const ctx = myGameArea.context;
+  ctx.clearRect(target.x, target.y, target.width, target.height);
+  makeBoardRegion(target.width, target.height, "black", target.x, target.y);
+  target.piece = "none";
+}
+
+function choosePiece(spaceName){
+  turn.movePieceAt = spaceName;
+  turn.piece = board[spaceName].piece;
+  highlightSquare(spaceName);
+}
+
+function movePiece(spaceName){
+  let moveTo = board[spaceName];
+  console.log("moveTo: ", moveTo);
+  let moveFrom = board[turn.movePieceAt];
+  console.log("moveFrom: ", moveFrom);
+  moveTo.piece = turn.piece;
+  console.log("turn.piece: ", turn.piece);
+  moveFrom.piece = "none";
+  clearSpace(moveFrom.name);
+  console.log("moveFrom.name: ", moveFrom.name);
+  drawPiece(turn.piece, spaceName);
+  console.log("spaceName: ", spaceName);
+}
+
+//selects a function based on a piece name and space
+function drawPiece(piece, spaceName) {
+  if (piece == "whiteRound") {
+    drawWhiteRoundPiece(spaceName);
+  } else if (piece == "whiteSquare") {
+    drawWhiteSquarePiece(spaceName);
+  } else if (piece == "brownRound") {
+    drawBrownRoundPiece(spaceName);
+  } else if (piece == "brownSquare") {
+    drawBrownSquarePiece(spaceName);
+  }
+}
+
 //make a function to draw a white square piece on a space
 function drawWhiteSquarePiece(spaceName) {
   component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
   component(30, 30, "#FBD5AC", board[spaceName].x + 10, board[spaceName].y + 10);
   myGameArea.context.strokeRect(board[spaceName].x + 10, board[spaceName].y + 10, 30, 30);
+  board[spaceName].piece = "whiteSquare";
 }
 //make a function to draw a brown square piece on a space
 function drawBrownSquarePiece(spaceName) {
   component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
   component(30, 30, "#915C1E", board[spaceName].x + 10, board[spaceName].y + 10);
   myGameArea.context.strokeRect(board[spaceName].x + 10, board[spaceName].y + 10, 30, 30);
+  board[spaceName].piece = "brownSquare";
 }
 
 //make a function to draw a white round piece on a space
 function drawWhiteRoundPiece(spaceName){
   component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
   drawCircle(15, "#FBD5AC", board[spaceName].x + 25, board[spaceName].y + 25);
+  board[spaceName].piece = "whiteRound";
 }
 
 function drawBrownRoundPiece(spaceName){
   component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
   drawCircle(15, "#915C1E", board[spaceName].x + 25, board[spaceName].y + 25);
+  board[spaceName].piece = "brownRound";
+}
+
+function highlightSquare(spaceName){
+  let target = board[spaceName];
+  const ctx = myGameArea.context;
+  let defaultColor = ctx.strokeStyle;
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#EEF11C";
+  ctx.strokeRect(target.x + 3, target.y + 3, target.width - 6, target.height -6);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = defaultColor;
 }
 
 //myGameArea is the variable that holds the context for the canvas element.
@@ -138,6 +223,8 @@ var myGameArea = {
 function isIntersect(point, box) {
   if (box.x <= point.x && point.x <= (box.x + box.width) && box.y <= point.y && point.y <= (box.y + box.height)){
     console.log(box.name);
+    console.log("x,y: ", point.x, point.y);
+    console.log("box coords: ", box.x, box.y);
     return box.name;
   }
 }
@@ -149,11 +236,17 @@ canvas.addEventListener('click', (e) => {
     y: e.clientY
   };
   for (var box of Object.values(board)) {
-    name = isIntersect(point, box)
+    name = isIntersect(point, box);
     if (name) {
-      drawWhiteRoundPiece(name);
       break;
     };
+  }
+  if (turn.phase == "choosePiece1"){
+    choosePiece(name);
+    advanceTurn();
+  } else {
+    movePiece(name);
+    turn.phase = "choosePiece1";
   }
 })
 
