@@ -36,7 +36,7 @@ const boarderTiles = ["a2", "a3", "a4", "a5", "a6", "b1", "b7",
                     ];
 
 const columns = "abcde";
-
+let anchorSquare = "";
 //generate Board object with nodes and edges.
 const board = standardBoard();
 addDirectionsToSquares(board);
@@ -119,6 +119,24 @@ function drawBrownRoundPiece(spaceName){
   component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
   drawCircle(15, "#915C1E", board[spaceName].x + 25, board[spaceName].y + 25);
   board[spaceName].piece = "brownRound";
+}
+
+//draw a red highlight around a piece to indicate anchor.
+function addAnchor(spaceName){
+  let target = board[spaceName];
+  const ctx = myGameArea.context;
+  let defaultColor = ctx.strokeStyle;
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = "#EF1B13";
+  ctx.strokeRect(target.x + 5, target.y + 5, target.width - 10, target.height -10);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = defaultColor;
+  if (anchorSquare) {
+    board[anchorSquare].hasAnchor = false;
+    drawPiece(board[anchorSquare].piece, anchorSquare)
+  }
+  anchorSquare = spaceName;
+  target.hasAnchor = true;
 }
 
 //Controller function to select a draw function based on a piece name and space
@@ -261,7 +279,8 @@ function standardBoard(){
         drawable: true,
         pushable: true,
         placeable: true,
-        endgame: false
+        endgame: false,
+        hasAnchor: false
       }
       makeEdges(column, i, name);
 
