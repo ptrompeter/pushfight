@@ -39,6 +39,7 @@ const columns = "abcde";
 
 //generate Board object with nodes and edges.
 const board = standardBoard();
+addDirectionsToSquares(board);
 
 
 //BASIC FUNCTIONS FOR DRAWING AND ERASING SHAPES
@@ -296,6 +297,28 @@ function standardBoard(){
   console.log("board: ", board);
 
   return board;
+}
+
+//Function to Add adjacent squares as directional properties to a board
+function addDirectionsToSquares(board) {
+  for (let square of Object.values(board)) {
+    let up = nextUp(square);
+    let down = nextDown(square);
+    let right = nextRight(square);
+    let left = nextLeft(square);
+    if (up) {
+      square.up = up;
+    }
+    if (down) {
+      square.down = down;
+    }
+    if (left) {
+      square.left = left;
+    }
+    if (right) {
+      square.right = right;
+    }
+  }
 }
 
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
