@@ -29,7 +29,7 @@ const phaseArray = ["choosePiece1", "movePiece1", "choosePiece2",
                     "movePiece2", "push", "endTurn"
                     ];
 // List of unplayable tile names
-// used for board generation, win detection, and push logic.
+// used for board generation, (and maybe win detection and push logic).
 const boarderTiles = ["a2", "a3", "a4", "a5", "a6", "b1", "b7",
                       "b8", "c0", "c9", "d0", "d9", "e1", "e2",
                       "e8", "f3", "f4", "f5", "f6", "f7"
@@ -75,7 +75,15 @@ function clearSpace(spaceName){
   const ctx = myGameArea.context;
   ctx.clearRect(target.x, target.y, target.width, target.height);
   makeBoardRegion(target.width, target.height, "black", target.x, target.y);
-  target.piece = "none";
+  target.piece = "";
+}
+
+//new clear function that takes a space instead of a name.
+function clear(space) {
+  const ctx = myGameArea.context;
+  ctx.clearRect(space.x, space.y, space.width, space.height);
+  makeBoardRegion(space.width, space.height, space.color, space.x, space.y);
+  space.piece = "";
 }
 
 //draw a highlighted region around a selected square.
@@ -89,11 +97,6 @@ function highlightSquare(spaceName){
   ctx.lineWidth = 1;
   ctx.strokeStyle = defaultColor;
 }
-
-const myObj = {
-  height: 8,
-  width: 7
-};
 
 //draw a filled box with text.
 function textBox(box, textColor, font, fontsize, text) {
@@ -142,6 +145,26 @@ function drawBrownRoundPiece(spaceName){
   board[spaceName].piece = "brownRound";
 }
 
+//make a summary function that draws any piece,
+//given a space and a piece-name.
+function drawAnyPiece(space, piece = ""){
+  component(48, 48, "#DDFAFD", space.x + 1, space.y +1);
+  if (piece == "whiteSquare"){
+    component(30, 30, "#FBD5AC", space.x + 10, space.y + 10);
+    myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
+  } else if (piece == "brownSquare"){
+    component(30, 30, "#915C1E", space.x + 10, space.y + 10);
+    myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
+  } else if (piece == "whiteRound"){
+    drawCircle(15, "#FBD5AC", space.x + 25, space.y + 25);
+  } else if (piece == "brownRound"){
+    drawCircle(15, "#915C1E", space.x + 25, space.y + 25);
+  } else {
+    clear(space);
+  }
+  space.piece = piece;
+}
+
 //draw a red highlight around a piece to indicate anchor.
 function addAnchor(spaceName){
   let target = board[spaceName];
@@ -173,6 +196,15 @@ function drawPiece(piece, spaceName) {
   }
 }
 
+//I need a better drawing function that just draws whatever is on the square
+function updateSpace(space) {
+  if (!space.drawable){
+    console.log("invalid space log.")
+    return "invalid space"
+  }
+  drawAnyPiece(space, space.piece);
+}
+
 //FUNCTIONS TO MANIPULATE PIECES
 
 //function to select a piece for movement
@@ -190,12 +222,92 @@ function movePiece(spaceName){
   console.log("moveFrom: ", moveFrom);
   moveTo.piece = turn.piece;
   console.log("turn.piece: ", turn.piece);
-  moveFrom.piece = "none";
+  moveFrom.piece = "";
   clearSpace(moveFrom.name);
   console.log("moveFrom.name: ", moveFrom.name);
   drawPiece(turn.piece, spaceName);
   console.log("spaceName: ", spaceName);
 }
+//writing a superior move function that just takes spaces as arguments
+function move(startSpace, targetSpace){
+  console.log(`Moving ${startSpace.name} to ${targetSpace.name}`);
+  console.log("startSpace: ", startSpace);
+  console.log("targetSpace: ", targetSpace);
+  if (targetSpace.piece || !targetSpace.placeable) {
+    return "move failed.";
+  }
+  if (!startSpace.piece) {
+    return "no piece on start tile.";
+  }
+  // startSpace.piece = targetSpace.piece;
+  drawAnyPiece(targetSpace, startSpace.piece)
+  clear(startSpace);
+  // drawPiece(targetSpace.piece, targetSpace.name);
+  // startSpace.piece = "";
+  // clearSpace(startSpace.name);
+  return "move complete."
+}
+
+//FUNCTIONS TO EFFECT A PUSH
+
+//Run a sequence of functions to control a push.
+
+/* Adding a test optional parameter so I can check
+for legal pushes without moving pieces.  (Having
+no legal pushes after one's moves is a lose
+condition.) */
+function pushPiece(space, direction, test = false){
+  const directionObj = {};
+  (space.up) ? directionObj["up"] = space.up : false;
+  (space.down) ? directionObj["down"] = space.down : false;
+  (space.left) ? directionObj["left"] = space.left : false;
+  (space.right) ? directionObj["right"] = space.right : false;
+  console.log(space.name, "directionObj: ", directionObj);
+  if (space.hasAnchor || !space.pushable) {
+    return "blocked";
+  }
+  if (space.placeable && !space.piece){
+    return "push_ok";
+  }
+  if (space.endgame) {
+    return "endgame";
+  }
+  //Call pushPiece on the next square in line to determine end condition
+  let code = pushPiece(directionObj[direction], direction, test);
+  console.log(space.name, code);
+
+  //Handle endgame and win responses from next square
+  if (code == "endgame") {
+    if (space.piece == "whiteRound" || space.piece == "whiteSquare"){
+      return "brown win";
+    }
+    else {
+      return "white win";
+    }
+  }
+  if (code == "brown win") {
+    return code;
+  }
+  if (code == "white win") {
+    return code;
+  }
+  //Handle other responses
+  if (code == "blocked") {
+    return "blocked";
+  }
+  if (code == "push_ok") {
+    if (!test) {
+      console.log(move(space, directionObj[direction]));
+      console.log("ran move")
+      return code;
+    } else {
+      return code;
+    }
+  }
+  return "something unexpected happened.";
+}
+
+
 
 //CONTROLLER FUNCTIONS FOR GAME
 
@@ -296,7 +408,7 @@ function standardBoard(){
         y: (i * 50 + 50),
         name: name,
         edges: [],
-        piece: "none",
+        piece: "",
         drawable: true,
         pushable: true,
         placeable: true,
@@ -370,7 +482,7 @@ function addSpecialSquares(board){
     y: 100,
     name: "pushButton",
     edges: [],
-    piece: "none",
+    piece: "",
     drawable: false,
     pushable: false,
     placeable: false,
@@ -378,6 +490,22 @@ function addSpecialSquares(board){
     hasAnchor: false
   }
   board.pushButton = pushButton1;
+  const moveButton = {
+    width: 60,
+    height: 50,
+    color: "#EF1B13",
+    x: 295,
+    y: 180,
+    name: "moveButton",
+    edges: [],
+    piece: "",
+    drawable: false,
+    pushable: false,
+    placeable: false,
+    endgame: false,
+    hasAnchor: false
+  }
+  board.moveButton = moveButton;
 }
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
 function startGame() {
@@ -397,6 +525,8 @@ function startGame() {
   //Add Special buttons (e.g. pushButton)
   component(60, 50, "#EF1B13", 295, 100);
   textBox(board.pushButton, "#FEFEFE", "Arial", 18, "PUSH");
+  textBox(board.moveButton, "#FEFEFE", "Arial", 18, "MOVE");
+
 
 
   //Add tests for pieces
@@ -457,3 +587,14 @@ canvas.addEventListener('click', (e) => {
 
 //Adding a call to start the game on page load.
 startGame();
+//Adding some function tests
+console.log("d5:", board.d5);
+console.log("c4:", board.c4);
+console.log("board c4, right:");
+console.log(pushPiece(board.c4, "right"));
+console.log("starting second move;")
+console.log("c4: ", board.c4);
+console.log("c5: ", board.c5);
+console.log(pushPiece(board.c5, "up"));
+console.log(pushPiece(board.e4, "right"));
+console.log(pushPiece(board.c4, "up"));
