@@ -40,6 +40,7 @@ let anchorSquare = "";
 //generate Board object with nodes and edges.
 const board = standardBoard();
 addDirectionsToSquares(board);
+addSpecialSquares(board);
 
 
 //BASIC FUNCTIONS FOR DRAWING AND ERASING SHAPES
@@ -77,7 +78,7 @@ function clearSpace(spaceName){
   target.piece = "none";
 }
 
-//draw a highlighted region around a selected square
+//draw a highlighted region around a selected square.
 function highlightSquare(spaceName){
   let target = board[spaceName];
   const ctx = myGameArea.context;
@@ -87,6 +88,26 @@ function highlightSquare(spaceName){
   ctx.strokeRect(target.x + 3, target.y + 3, target.width - 6, target.height -6);
   ctx.lineWidth = 1;
   ctx.strokeStyle = defaultColor;
+}
+
+const myObj = {
+  height: 8,
+  width: 7
+};
+
+//draw a filled box with text.
+function textBox(box, textColor, font, fontsize, text) {
+  const {width, height, color, x, y} = box;
+  const ctx = myGameArea.context;
+  component(width, height, color, x, y);
+  let defaultFont = ctx.font;
+  let defaultColor = ctx.fillStyle;
+  ctx.font = String(fontsize) + "px " + font;
+  ctx.fillStyle = textColor;
+  ctx.textAlign = "center";
+  ctx.fillText(text, (x + width / 2), (y + height / 2 + fontsize / 3));
+  ctx.font = defaultFont;
+  ctx.fillStyle = defaultColor;
 }
 
 
@@ -339,7 +360,25 @@ function addDirectionsToSquares(board) {
     }
   }
 }
-
+//adding a function to create 1-off special squares
+function addSpecialSquares(board){
+  const pushButton1 = {
+    width: 60,
+    height: 50,
+    color: "#EF1B13",
+    x: 295,
+    y: 100,
+    name: "pushButton",
+    edges: [],
+    piece: "none",
+    drawable: false,
+    pushable: false,
+    placeable: false,
+    endgame: false,
+    hasAnchor: false
+  }
+  board.pushButton = pushButton1;
+}
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
 function startGame() {
   myGameArea.start();
@@ -351,9 +390,15 @@ function startGame() {
       makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
     }
   }
-  //draw side boxes (walls)
+  //Draw side boxes (walls)
   component(25, 252, "black", 25, 149);
   component(25, 252, "black", 250, 199);
+
+  //Add Special buttons (e.g. pushButton)
+  component(60, 50, "#EF1B13", 295, 100);
+  textBox(board.pushButton, "#FEFEFE", "Arial", 18, "PUSH");
+
+
   //Add tests for pieces
   drawWhiteSquarePiece("c4");
   drawBrownSquarePiece("c5");
@@ -380,7 +425,7 @@ function isIntersect(point, box) {
 }
 //adding a canvas event listener that can respond to clicking on boxes
 canvas.addEventListener('click', (e) => {
-  let name = ""
+  let name = "";
   const point = {
     x: e.clientX,
     y: e.clientY
@@ -390,6 +435,13 @@ canvas.addEventListener('click', (e) => {
     if (name) {
       break;
     };
+  }
+  if (name == "pushButton") {
+    console.log("name: ", name);
+    console.log("board[name]: ", board[name]);
+    console.log("board[name].x: ", board[name].x);
+
+    highlightSquare("pushButton");
   }
   if (name) {
     if (turn.phase == "choosePiece1"){
