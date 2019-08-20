@@ -35,7 +35,7 @@ const boarderTiles = ["a2", "a3", "a4", "a5", "a6", "b1", "b7",
                       "e8", "f3", "f4", "f5", "f6", "f7"
                     ];
 
-const columns = "abcde";
+const columns = "abcdef";
 let anchorSquare = "";
 //generate Board object with nodes and edges.
 const board = standardBoard();
@@ -199,7 +199,6 @@ function drawPiece(piece, spaceName) {
 //I need a better drawing function that just draws whatever is on the square
 function updateSpace(space) {
   if (!space.drawable){
-    console.log("invalid space log.")
     return "invalid space"
   }
   drawAnyPiece(space, space.piece);
@@ -215,24 +214,17 @@ function choosePiece(spaceName){
 }
 
 //function to move a selected space to a new square.
+//TODO: make this function obsolete, the delete
 function movePiece(spaceName){
   let moveTo = board[spaceName];
-  console.log("moveTo: ", moveTo);
   let moveFrom = board[turn.movePieceAt];
-  console.log("moveFrom: ", moveFrom);
   moveTo.piece = turn.piece;
-  console.log("turn.piece: ", turn.piece);
   moveFrom.piece = "";
   clearSpace(moveFrom.name);
-  console.log("moveFrom.name: ", moveFrom.name);
   drawPiece(turn.piece, spaceName);
-  console.log("spaceName: ", spaceName);
 }
 //writing a superior move function that just takes spaces as arguments
 function move(startSpace, targetSpace){
-  console.log(`Moving ${startSpace.name} to ${targetSpace.name}`);
-  console.log("startSpace: ", startSpace);
-  console.log("targetSpace: ", targetSpace);
   if (targetSpace.piece || !targetSpace.placeable) {
     return "move failed.";
   }
@@ -262,11 +254,8 @@ function pushPiece(space, direction, test = false){
   if (space.endgame) {
     return "endgame";
   }
-  console.log(`${space.name}'s space[direction]: `, space[direction])
   //Call pushPiece on the next square in line to determine end condition
   let code = pushPiece(space[direction], direction, test);
-  console.log(space.name, code);
-
   //Handle endgame and win responses from next square
   if (code == "endgame") {
     if (space.piece == "whiteRound" || space.piece == "whiteSquare"){
@@ -289,7 +278,6 @@ function pushPiece(space, direction, test = false){
   if (code == "push_ok") {
     if (!test) {
       move(space, space[direction])
-      console.log("ran move")
       return code;
     } else {
       return code;
@@ -370,6 +358,7 @@ function standardBoard(){
       }
     }
     catch(error) {
+      console.log(name);
       console.log(error);
     }
     finally {
@@ -579,10 +568,9 @@ canvas.addEventListener('click', (e) => {
 //Adding a call to start the game on page load.
 startGame();
 //Adding some function tests
-console.log("d5:", board.d5);
-console.log("c4:", board.c4);
-console.log("board c4, right:");
-console.log(pushPiece(board.c4, "right"));
-console.log(pushPiece(board.c5, "up"));
-console.log(pushPiece(board.e4, "right"));
-// console.log(pushPiece(board.c4, "up"));
+//
+// console.log(pushPiece(board.c4, "right"));
+// console.log(pushPiece(board.c5, "up"));
+// console.log(pushPiece(board.e4, "right"));
+// console.log(pushPiece(board.e4, "up"));
+// console.log(pushPiece(board.e3, "up"));
