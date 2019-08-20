@@ -239,12 +239,8 @@ function move(startSpace, targetSpace){
   if (!startSpace.piece) {
     return "no piece on start tile.";
   }
-  // startSpace.piece = targetSpace.piece;
   drawAnyPiece(targetSpace, startSpace.piece)
   clear(startSpace);
-  // drawPiece(targetSpace.piece, targetSpace.name);
-  // startSpace.piece = "";
-  // clearSpace(startSpace.name);
   return "move complete."
 }
 
@@ -257,12 +253,6 @@ for legal pushes without moving pieces.  (Having
 no legal pushes after one's moves is a lose
 condition.) */
 function pushPiece(space, direction, test = false){
-  const directionObj = {};
-  (space.up) ? directionObj["up"] = space.up : false;
-  (space.down) ? directionObj["down"] = space.down : false;
-  (space.left) ? directionObj["left"] = space.left : false;
-  (space.right) ? directionObj["right"] = space.right : false;
-  console.log(space.name, "directionObj: ", directionObj);
   if (space.hasAnchor || !space.pushable) {
     return "blocked";
   }
@@ -272,8 +262,9 @@ function pushPiece(space, direction, test = false){
   if (space.endgame) {
     return "endgame";
   }
+  console.log(`${space.name}'s space[direction]: `, space[direction])
   //Call pushPiece on the next square in line to determine end condition
-  let code = pushPiece(directionObj[direction], direction, test);
+  let code = pushPiece(space[direction], direction, test);
   console.log(space.name, code);
 
   //Handle endgame and win responses from next square
@@ -297,7 +288,7 @@ function pushPiece(space, direction, test = false){
   }
   if (code == "push_ok") {
     if (!test) {
-      console.log(move(space, directionObj[direction]));
+      move(space, space[direction])
       console.log("ran move")
       return code;
     } else {
@@ -592,9 +583,6 @@ console.log("d5:", board.d5);
 console.log("c4:", board.c4);
 console.log("board c4, right:");
 console.log(pushPiece(board.c4, "right"));
-console.log("starting second move;")
-console.log("c4: ", board.c4);
-console.log("c5: ", board.c5);
 console.log(pushPiece(board.c5, "up"));
 console.log(pushPiece(board.e4, "right"));
-console.log(pushPiece(board.c4, "up"));
+// console.log(pushPiece(board.c4, "up"));
