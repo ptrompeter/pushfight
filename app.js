@@ -467,6 +467,32 @@ function upArrow(square){
 }
 
 
+/* Draw any polygon given an object with x,y properties for offset,
+array of coordinates, color, stroke, and fill options (with defaults).
+*/
+
+function drawPoly(offsetObj, coords, options = arrowOptions){
+  const {x, y} = offsetObj;
+  const ctx = myGameArea.context;
+  ctx.fillStyle = options.fillStyle;
+  ctx.strokeStyle = options.strokeStyle;
+  ctx.beginPath();
+  coords.forEach((pair) => ctx.lineTo(pair[0] + x, pair[1] + y));
+  ctx.closePath();
+  (options.fill) ? ctx.fill() : {};
+  (options.stroke) ? ctx.stroke() : {};
+}
+
+const arrowOptions = {}
+arrowOptions.fillStyle = '#F9DC05';
+arrowOptions.strokeStyle = 'black';
+arrowOptions.fill = true;
+arrowOptions.stroke = true;
+
+const arrowUpCoords = [
+                        [25, 5], [45, 25], [30, 25], [30, 45],
+                        [20, 45], [20, 25], [5, 25], [25, 5]
+                      ];
 
 
 
@@ -526,3 +552,4 @@ startGame();
 // console.log(pushPiece(board.e4, "up"));
 // console.log(pushPiece(board.e3, "up"));
 upArrow(board["f4"]);
+drawPoly(board.b3, arrowUpCoords);
