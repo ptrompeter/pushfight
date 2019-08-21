@@ -444,6 +444,31 @@ function startGame() {
   drawAnyPiece(board["d5"], "brownRound");
 }
 
+//Draw an arrow (for push UI) pointing up
+function upArrow(square){
+  const {x, y} = square
+  const ctx = myGameArea.context;
+  ctx.fillStyle = '#F9DC05';
+  ctx.strokeStyle = 'black';
+
+  ctx.beginPath();
+  ctx.moveTo(25 + x, 5 + y);
+  ctx.lineTo(45 + x, 25 + y);
+  ctx.lineTo(30 + x, 25 + y);
+  ctx.lineTo(30 + x, 45 + y);
+  ctx.lineTo(20 + x, 45 + y);
+  ctx.lineTo(20 + x, 25 + y);
+  ctx.lineTo(5 + x, 25 + y);
+  ctx.lineTo(25 + x, 5 + y);
+
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+}
+
+
+
+
 
 
 //EVENT LISTENERS AND EVENT LISTENER HELPER FUNCTIONS
@@ -500,3 +525,4 @@ startGame();
 // console.log(pushPiece(board.e4, "right"));
 // console.log(pushPiece(board.e4, "up"));
 // console.log(pushPiece(board.e3, "up"));
+upArrow(board["f4"]);
