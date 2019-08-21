@@ -37,6 +37,29 @@ const borderTiles = ["a2", "a3", "a4", "a5", "a6", "b1", "b7",
 
 const columns = "abcdef";
 let anchorSquare = "";
+
+//Variables for drawing images on CANVAS
+
+const arrowOptions = {}
+arrowOptions.fillStyle = '#F9DC05';
+arrowOptions.strokeStyle = 'black';
+arrowOptions.fill = true;
+arrowOptions.stroke = true;
+
+const arrowUpCoords = [
+                        [25, 5], [45, 25], [30, 25], [30, 45],
+                        [20, 45], [20, 25], [5, 25], [25, 5]
+                      ];
+
+const arrowLeftCoords = [];
+arrowUpCoords.forEach((pair) => arrowLeftCoords.push([pair[1], pair[0]]));
+
+const arrowDownCoords = [];
+arrowUpCoords.forEach((pair) => arrowDownCoords.push([50 - pair[0], 50 - pair[1]]));
+
+const arrowRightCoords = [];
+arrowUpCoords.forEach((pair) => arrowRightCoords.push([50 - pair[1], 50 - pair[0]]));
+
 //generate Board object with nodes and edges.
 const board = standardBoard();
 // addDirectionsToSquares(board);
@@ -444,28 +467,6 @@ function startGame() {
   drawAnyPiece(board["d5"], "brownRound");
 }
 
-//Draw an arrow (for push UI) pointing up
-function upArrow(square){
-  const {x, y} = square
-  const ctx = myGameArea.context;
-  ctx.fillStyle = '#F9DC05';
-  ctx.strokeStyle = 'black';
-
-  ctx.beginPath();
-  ctx.moveTo(25 + x, 5 + y);
-  ctx.lineTo(45 + x, 25 + y);
-  ctx.lineTo(30 + x, 25 + y);
-  ctx.lineTo(30 + x, 45 + y);
-  ctx.lineTo(20 + x, 45 + y);
-  ctx.lineTo(20 + x, 25 + y);
-  ctx.lineTo(5 + x, 25 + y);
-  ctx.lineTo(25 + x, 5 + y);
-
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-}
-
 
 /* Draw any polygon given an object with x,y properties for offset,
 array of coordinates, color, stroke, and fill options (with defaults).
@@ -482,18 +483,6 @@ function drawPoly(offsetObj, coords, options = arrowOptions){
   (options.fill) ? ctx.fill() : {};
   (options.stroke) ? ctx.stroke() : {};
 }
-
-const arrowOptions = {}
-arrowOptions.fillStyle = '#F9DC05';
-arrowOptions.strokeStyle = 'black';
-arrowOptions.fill = true;
-arrowOptions.stroke = true;
-
-const arrowUpCoords = [
-                        [25, 5], [45, 25], [30, 25], [30, 45],
-                        [20, 45], [20, 25], [5, 25], [25, 5]
-                      ];
-
 
 
 
@@ -551,5 +540,7 @@ startGame();
 // console.log(pushPiece(board.e4, "right"));
 // console.log(pushPiece(board.e4, "up"));
 // console.log(pushPiece(board.e3, "up"));
-upArrow(board["f4"]);
 drawPoly(board.b3, arrowUpCoords);
+drawPoly(board.c3, arrowLeftCoords);
+drawPoly(board.d3, arrowRightCoords);
+drawPoly(board.e3, arrowDownCoords);
