@@ -116,37 +116,7 @@ function textBox(box, textColor, font, fontsize, text) {
 
 //FUNCTIONS THAT DRAW PIECES ON REGIONS
 
-//make a function to draw a white square piece on a space
-function drawWhiteSquarePiece(spaceName) {
-  component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
-  component(30, 30, "#FBD5AC", board[spaceName].x + 10, board[spaceName].y + 10);
-  myGameArea.context.strokeRect(board[spaceName].x + 10, board[spaceName].y + 10, 30, 30);
-  board[spaceName].piece = "whiteSquare";
-}
-//make a function to draw a brown square piece on a space
-function drawBrownSquarePiece(spaceName) {
-  component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
-  component(30, 30, "#915C1E", board[spaceName].x + 10, board[spaceName].y + 10);
-  myGameArea.context.strokeRect(board[spaceName].x + 10, board[spaceName].y + 10, 30, 30);
-  board[spaceName].piece = "brownSquare";
-}
-
-//make a function to draw a white round piece on a space
-function drawWhiteRoundPiece(spaceName){
-  component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
-  drawCircle(15, "#FBD5AC", board[spaceName].x + 25, board[spaceName].y + 25);
-  board[spaceName].piece = "whiteRound";
-}
-
-//make a functino to draw a brown round piece on a space
-function drawBrownRoundPiece(spaceName){
-  component(48, 48, "#DDFAFD", board[spaceName].x + 1, board[spaceName].y +1);
-  drawCircle(15, "#915C1E", board[spaceName].x + 25, board[spaceName].y + 25);
-  board[spaceName].piece = "brownRound";
-}
-
-//make a summary function that draws any piece,
-//given a space and a piece-name.
+//Draw any piece, given a space and a piece-name.
 function drawAnyPiece(space, piece = ""){
   component(48, 48, "#DDFAFD", space.x + 1, space.y +1);
   if (piece == "whiteSquare"){
@@ -177,29 +147,16 @@ function addAnchor(spaceName){
   ctx.strokeStyle = defaultColor;
   if (anchorSquare) {
     board[anchorSquare].hasAnchor = false;
-    drawPiece(board[anchorSquare].piece, anchorSquare)
+    drawPiece(board[anchorSquare].piece, anchorSquare);
   }
   anchorSquare = spaceName;
   target.hasAnchor = true;
 }
 
-//Controller function to select a draw function based on a piece name and space
-function drawPiece(piece, spaceName) {
-  if (piece == "whiteRound") {
-    drawWhiteRoundPiece(spaceName);
-  } else if (piece == "whiteSquare") {
-    drawWhiteSquarePiece(spaceName);
-  } else if (piece == "brownRound") {
-    drawBrownRoundPiece(spaceName);
-  } else if (piece == "brownSquare") {
-    drawBrownSquarePiece(spaceName);
-  }
-}
-
 //I need a better drawing function that just draws whatever is on the square
 function updateSpace(space) {
   if (!space.drawable){
-    return "invalid space"
+    return "invalid space";
   }
   drawAnyPiece(space, space.piece);
 }
@@ -231,9 +188,9 @@ function move(startSpace, targetSpace){
   if (!startSpace.piece) {
     return "no piece on start tile.";
   }
-  drawAnyPiece(targetSpace, startSpace.piece)
+  drawAnyPiece(targetSpace, startSpace.piece);
   clear(startSpace);
-  return "move complete."
+  return "move complete.";
 }
 
 //FUNCTIONS TO EFFECT A PUSH
@@ -324,7 +281,7 @@ function nextDown(square) {
 function nextLeft(square) {
   let column = square.name[0];
   let row = square.name[1];
-  if( column == "a"){
+  if ( column == "a") {
     return false
   }
   const newName = columns[columns.indexOf(column) - 1] + row;
@@ -334,8 +291,8 @@ function nextLeft(square) {
 function nextRight(square) {
   let column = square.name[0];
   let row = square.name[1];
-  if( column == "f"){
-    return false
+  if ( column == "f"){
+    return false;
   }
   const newName = columns[columns.indexOf(column) + 1] + row;
   return (square.edges.includes(newName)? board[newName] : false)
@@ -510,10 +467,12 @@ function startGame() {
 
 
   //Add tests for pieces
-  drawWhiteSquarePiece("c4");
-  drawBrownSquarePiece("c5");
-  drawWhiteRoundPiece("d4");
-  drawBrownRoundPiece("d5");
+  drawAnyPiece(board["c4"], "whiteSquare");
+  drawAnyPiece(board["d4"], "whiteRound");
+  drawAnyPiece(board["c5"], "brownSquare");
+  drawAnyPiece(board["d5"], "brownRound");
+
+
 }
 
 
