@@ -30,7 +30,7 @@ const phaseArray = ["choosePiece1", "movePiece1", "choosePiece2",
                     ];
 // List of unplayable tile names
 // used for board generation, (and maybe win detection and push logic).
-const boarderTiles = ["a2", "a3", "a4", "a5", "a6", "b1", "b7",
+const borderTiles = ["a2", "a3", "a4", "a5", "a6", "b1", "b7",
                       "b8", "c0", "c9", "d0", "d9", "e1", "e2",
                       "e8", "f3", "f4", "f5", "f6", "f7"
                     ];
@@ -39,7 +39,8 @@ const columns = "abcdef";
 let anchorSquare = "";
 //generate Board object with nodes and edges.
 const board = standardBoard();
-addDirectionsToSquares(board);
+// addDirectionsToSquares(board);
+addSidesToBoard(board);
 addSpecialSquares(board);
 
 
@@ -263,41 +264,31 @@ function advanceTurn(){
 }
 
 //Movement helper functions (returning adjacent nodes)
-//Try to return a square one row up, given a square.
-function nextUp(square) {
-  let column = square.name[0];
+//writing a single function to add up, down, left, and right properties to squares.
+function addSides(square){
+  let column = square.name[0];;
   let row = parseInt(square.name[1]);
-  const newName = column + String(row - 1);
-  return (square.edges.includes(newName)? board[newName] : false)
-}
-//Try to return a square one row down, given a square.
-function nextDown(square) {
-  let column = square.name[0];
-  let row = parseInt(square.name[1]);
-  const newName = column + String(row + 1);
-  return (square.edges.includes(newName)? board[newName] : false)
-}
-//Try to return a square one row left, given a square.
-function nextLeft(square) {
-  let column = square.name[0];
-  let row = square.name[1];
-  if ( column == "a") {
-    return false
+  let newName = column + String(row - 1);
+  square.up = (square.edges.includes(newName) ? board[newName] : false)
+  newName = column + String(row + 1);
+  square.down = (square.edges.includes(newName) ? board[newName] : false)
+  if (column != "a"){
+    newName = columns[columns.indexOf(column) - 1] + String(row);
+    square.left = (square.edges.includes(newName) ? board[newName] : false)
+  } else {
+    square.left = false;
   }
-  const newName = columns[columns.indexOf(column) - 1] + row;
-  return (square.edges.includes(newName)? board[newName] : false)
-}
-//Try to return a square one row right, given a square.
-function nextRight(square) {
-  let column = square.name[0];
-  let row = square.name[1];
-  if ( column == "f"){
-    return false;
+  if (column != "f"){
+    newName = columns[columns.indexOf(column) + 1] + String(row);
+    square.right = (square.edges.includes(newName) ? board[newName] : false)
+  } else {
+    square.right = false;
   }
-  const newName = columns[columns.indexOf(column) + 1] + row;
-  return (square.edges.includes(newName)? board[newName] : false)
 }
 
+function addSidesToBoard(board){
+  Object.values(board).forEach((square) => addSides(square));
+}
 
 //CODE BLOCK TO GENERATE A COMPLETE BOARD OBJECT.  CONSIDER REFACTOR?
 
@@ -372,7 +363,7 @@ function standardBoard(){
   makeBoxesByColumn("f", 3, 7);
 
   //set details for boarder tiles.  Consider refactor into functions.
-  for ( let item of boarderTiles) {
+  for ( let item of borderTiles) {
     board[item].height = 0;
     board[item].width = 0;
     board[item].drawable = false;
@@ -388,27 +379,6 @@ function standardBoard(){
   return board;
 }
 
-//Function to Add adjacent squares as directional properties to a board
-function addDirectionsToSquares(board) {
-  for (let square of Object.values(board)) {
-    let up = nextUp(square);
-    let down = nextDown(square);
-    let right = nextRight(square);
-    let left = nextLeft(square);
-    if (up) {
-      square.up = up;
-    }
-    if (down) {
-      square.down = down;
-    }
-    if (left) {
-      square.left = left;
-    }
-    if (right) {
-      square.right = right;
-    }
-  }
-}
 //adding a function to create 1-off special squares
 function addSpecialSquares(board){
   const pushButton1 = {
@@ -444,12 +414,13 @@ function addSpecialSquares(board){
   }
   board.moveButton = moveButton;
 }
+
+
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
 function startGame() {
   myGameArea.start();
 
   //Generate drawn squares for playable squares on the board.
-
   for (var key of Object.keys(board)) {
     if (board[key].drawable) {
       makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
@@ -471,11 +442,7 @@ function startGame() {
   drawAnyPiece(board["d4"], "whiteRound");
   drawAnyPiece(board["c5"], "brownSquare");
   drawAnyPiece(board["d5"], "brownRound");
-
-
 }
-
-
 
 
 
