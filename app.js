@@ -40,25 +40,27 @@ let anchorSquare = "";
 
 //Variables for drawing images on CANVAS
 
-const arrowOptions = {}
-arrowOptions.fillStyle = '#F9DC05';
-arrowOptions.strokeStyle = 'black';
-arrowOptions.fill = true;
-arrowOptions.stroke = true;
+const arrow = {}
+arrow.options = {}
+arrow.options.fillStyle = '#F9DC05';
+arrow.options.strokeStyle = 'black';
+arrow.options.fill = true;
+arrow.options.stroke = true;
 
-const arrowUpCoords = [
-                        [25, 5], [45, 25], [30, 25], [30, 45],
-                        [20, 45], [20, 25], [5, 25], [25, 5]
-                      ];
+arrow.up = [
+            [25, 5], [45, 25], [30, 25], [30, 45],
+            [20, 45], [20, 25], [5, 25], [25, 5]
+            ];
 
-const arrowLeftCoords = [];
-arrowUpCoords.forEach((pair) => arrowLeftCoords.push([pair[1], pair[0]]));
+arrow.left = [];
+arrow.up.forEach((pair) => arrow.left.push([pair[1], pair[0]]));
 
-const arrowDownCoords = [];
-arrowUpCoords.forEach((pair) => arrowDownCoords.push([50 - pair[0], 50 - pair[1]]));
+arrow.down = [];
+arrow.up.forEach((pair) => arrow.down.push([50 - pair[0], 50 - pair[1]]));
 
-const arrowRightCoords = [];
-arrowUpCoords.forEach((pair) => arrowRightCoords.push([50 - pair[1], 50 - pair[0]]));
+arrow.right = [];
+arrow.up.forEach((pair) => arrow.right.push([50 - pair[1], 50 - pair[0]]));
+
 
 //generate Board object with nodes and edges.
 const board = standardBoard();
@@ -472,7 +474,7 @@ function startGame() {
 array of coordinates, color, stroke, and fill options (with defaults).
 */
 
-function drawPoly(offsetObj, coords, options = arrowOptions){
+function drawPoly(offsetObj, coords, options = arrow.options){
   const {x, y} = offsetObj;
   const ctx = myGameArea.context;
   ctx.fillStyle = options.fillStyle;
@@ -540,7 +542,7 @@ startGame();
 // console.log(pushPiece(board.e4, "right"));
 // console.log(pushPiece(board.e4, "up"));
 // console.log(pushPiece(board.e3, "up"));
-drawPoly(board.b3, arrowUpCoords);
-drawPoly(board.c3, arrowLeftCoords);
-drawPoly(board.d3, arrowRightCoords);
-drawPoly(board.e3, arrowDownCoords);
+drawPoly(board.b3, arrow.up);
+drawPoly(board.c3, arrow.left);
+drawPoly(board.d3, arrow.right);
+drawPoly(board.e3, arrow.down);
