@@ -2,6 +2,12 @@
 
 // Potential color scheme: Harbor
 // Hex: 354649 / 6C7A89 / A3C6C4 / E0E7E9
+const colors = {
+  "dark": "#354649",
+  "lessDark": "#6C7A89",
+  "lessLight": "#A3C5C4",
+  "light": "#E0E7E9"
+}
 
 
 //Canvas variables.
@@ -21,16 +27,20 @@ var myGameArea = {
 //Game Controller Variables.
 const turn = {
   player: "white",
-  phase: "choosePiece1",
+  phase: "move1",
   movePieceAt: "",
   movePieceTo: "",
   piece: ""
 };
 
+const pushControl = {};
+pushControl.space = false;
+
+const moveControl = {};
+moveControl.space = false;
+
 //Create an array of turn phases (in order of normal progression).
-const phaseArray = ["choosePiece1", "movePiece1", "choosePiece2",
-                    "movePiece2", "push", "endTurn"
-                    ];
+const phaseArray = ["move1", "move2", "push", "endTurn"];
 // List of unplayable tile names
 // used for board generation, (and maybe win detection and push logic).
 const borderTiles = ["a2", "a3", "a4", "a5", "a6", "b1", "b7",
@@ -45,8 +55,8 @@ let anchorSquare = "";
 
 const arrow = {}
 arrow.options = {}
-arrow.options.fillStyle = '#F9DC05';
-arrow.options.strokeStyle = 'black';
+arrow.options.fillStyle = colors.light;
+arrow.options.strokeStyle = colors.dark;
 arrow.options.fill = true;
 arrow.options.stroke = true;
 
@@ -54,6 +64,9 @@ arrow.up = [
             [25, 5], [45, 25], [30, 25], [30, 45],
             [20, 45], [20, 25], [5, 25], [25, 5]
             ];
+
+// arrow.up.forEach((pair) => {pair[0] += .5; pair[1] += .5});
+
 
 arrow.left = [];
 arrow.up.forEach((pair) => arrow.left.push([pair[1], pair[0]]));
@@ -77,6 +90,7 @@ addSpecialSquares(board);
 //Make a function to draw the outlines of empty rectangles.
 function makeBoardRegion(width, height, color, x, y) {
   const ctx = myGameArea.context;
+  component(width, height, color, x, y);
   ctx.strokeRect(x, y, width, height);
 }
 
@@ -93,18 +107,10 @@ function drawCircle(radius, color, x, y){
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, 2*Math.PI);
   ctx.closePath();
-  ctx.stroke();
   ctx.fillStyle = color;
   ctx.fill();
-}
+  ctx.stroke();
 
-//make a function to clear a region and redraw it.
-function clearSpace(spaceName){
-  const target = board[spaceName];
-  const ctx = myGameArea.context;
-  ctx.clearRect(target.x, target.y, target.width, target.height);
-  makeBoardRegion(target.width, target.height, "black", target.x, target.y);
-  target.piece = "";
 }
 
 //new clear function that takes a space instead of a name.
@@ -141,22 +147,37 @@ function textBox(box, textColor, font, fontsize, text) {
   ctx.fillStyle = defaultColor;
 }
 
+/* Draw any polygon given an object with x,y properties for offset,
+array of coordinates, color, stroke, and fill options (with defaults).
+*/
+
+function drawPoly(offsetObj, coords, options = arrow.options){
+  const {x, y} = offsetObj;
+  const ctx = myGameArea.context;
+  ctx.fillStyle = options.fillStyle;
+  ctx.strokeStyle = options.strokeStyle;
+  ctx.beginPath();
+  coords.forEach((pair) => ctx.lineTo(pair[0] + x, pair[1] + y));
+  ctx.closePath();
+  (options.fill) ? ctx.fill() : {};
+  (options.stroke) ? ctx.stroke() : {};
+}
 
 //FUNCTIONS THAT DRAW PIECES ON REGIONS
 
 //Draw any piece, given a space and a piece-name.
 function drawAnyPiece(space, piece = ""){
-  component(48, 48, "#DDFAFD", space.x + 1, space.y +1);
+  component(48, 48, colors.lessLight, space.x + 1, space.y +1);
   if (piece == "whiteSquare"){
-    component(30, 30, "#FBD5AC", space.x + 10, space.y + 10);
+    component(30, 30, colors.light, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   } else if (piece == "brownSquare"){
-    component(30, 30, "#915C1E", space.x + 10, space.y + 10);
+    component(30, 30, colors.lessDark, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   } else if (piece == "whiteRound"){
-    drawCircle(15, "#FBD5AC", space.x + 25, space.y + 25);
+    drawCircle(15, colors.light, space.x + 25, space.y + 25);
   } else if (piece == "brownRound"){
-    drawCircle(15, "#915C1E", space.x + 25, space.y + 25);
+    drawCircle(15, colors.lessDark, space.x + 25, space.y + 25);
   } else {
     clear(space);
   }
@@ -223,6 +244,7 @@ function pushPiece(space, direction, test = false){
   if (space.hasAnchor || !space.pushable) {
     return "blocked";
   }
+  if (space.piece != "whiteSquare" || space.piece != "brownSquare") return "blocked";
   if (space.placeable && !space.piece){
     return "push_ok";
   }
@@ -273,39 +295,47 @@ function changePlayer(){
 //Move turn.phase forward
 function advanceTurn(){
   if (turn.phase == "endTurn"){
-    turn.phase = "choosePiece1";
+    turn.phase = "move1";
     changePlayer();
   } else {
     turn.phase = phaseArray[phaseArray.indexOf(turn.phase) + 1];
   }
 }
 
-//Movement helper functions (returning adjacent nodes)
-//writing a single function to add up, down, left, and right properties to squares.
-function addSides(square){
-  let column = square.name[0];;
-  let row = parseInt(square.name[1]);
-  let newName = column + String(row - 1);
-  square.up = (square.edges.includes(newName) ? board[newName] : false)
-  newName = column + String(row + 1);
-  square.down = (square.edges.includes(newName) ? board[newName] : false)
-  if (column != "a"){
-    newName = columns[columns.indexOf(column) - 1] + String(row);
-    square.left = (square.edges.includes(newName) ? board[newName] : false)
+//Test whether a space is occupied
+let hasPiece = space => (space.piece) ? true: false;
+//Test whether a selected piece belongs to the current player
+let matchPiece = space => (turn.player == space.piece.slice(0,5)) ? true: false;
+
+//Handle game logic during a Move phase
+function handleMove(space){
+  if (!moveControl.space) {
+    if (!matchPiece(space) || (!hasPiece(space))) return `Choose a tile with one of your pieces, ${turn.player}.`;
+    highlightSquare(space);
+    moveControl.space = space;
+    return "Click on an empty square to move, or on the highlighted square to cancel."
+  } else if (space == moveControl.space){
+    updateSpace(space);
+    moveControl.space = "";
+    return "Move cancelled."
   } else {
-    square.left = false;
-  }
-  if (column != "f"){
-    newName = columns[columns.indexOf(column) + 1] + String(row);
-    square.right = (square.edges.includes(newName) ? board[newName] : false)
-  } else {
-    square.right = false;
+    if (hasPiece(space)) return "You cannot move onto an occupied space.";
+    let message = move(moveControl.space, space);
+    if (message == "move complete.") {
+      advanceTurn();
+      moveControl.space = ""
+      return message;
+    } else {
+      return message;
+    }
   }
 }
 
-function addSidesToBoard(board){
-  Object.values(board).forEach((square) => addSides(square));
-}
+//Handle game logic during a Push phase
+function handlePush(space){}
+
+//Handle game logic during endturn phase...maybe unnecessary?
+function endTurn(){}
 
 //CODE BLOCK TO GENERATE A COMPLETE BOARD OBJECT.  CONSIDER REFACTOR?
 
@@ -348,9 +378,9 @@ function standardBoard(){
       board[name] = {
         width: 50,
         height: 50,
-        color: "black",
-        x: (columns.indexOf(column) * 50),
-        y: (i * 50 + 50),
+        color: colors.lessLight,
+        x: (columns.indexOf(column) * 50) + .5,
+        y: (i * 50 + 50) + .5,
         name: name,
         edges: [],
         piece: "",
@@ -401,9 +431,9 @@ function addSpecialSquares(board){
   const pushButton1 = {
     width: 60,
     height: 50,
-    color: "#EF1B13",
-    x: 295,
-    y: 100,
+    color: colors.dark,
+    x: 295.5,
+    y: 100.5,
     name: "pushButton",
     edges: [],
     piece: "",
@@ -417,9 +447,9 @@ function addSpecialSquares(board){
   const moveButton = {
     width: 60,
     height: 50,
-    color: "#EF1B13",
-    x: 295,
-    y: 180,
+    color: colors.dark,
+    x: 295.5,
+    y: 180.5,
     name: "moveButton",
     edges: [],
     piece: "",
@@ -432,10 +462,39 @@ function addSpecialSquares(board){
   board.moveButton = moveButton;
 }
 
+//writing a single function to add up, down, left, and right properties to squares.
+function addSides(square){
+  let column = square.name[0];;
+  let row = parseInt(square.name[1]);
+  let newName = column + String(row - 1);
+  square.up = (square.edges.includes(newName) ? board[newName] : false)
+  newName = column + String(row + 1);
+  square.down = (square.edges.includes(newName) ? board[newName] : false)
+  if (column != "a"){
+    newName = columns[columns.indexOf(column) - 1] + String(row);
+    square.left = (square.edges.includes(newName) ? board[newName] : false)
+  } else {
+    square.left = false;
+  }
+  if (column != "f"){
+    newName = columns[columns.indexOf(column) + 1] + String(row);
+    square.right = (square.edges.includes(newName) ? board[newName] : false)
+  } else {
+    square.right = false;
+  }
+}
+
+//Run addSides on all board spaces.
+function addSidesToBoard(board){
+  Object.values(board).forEach((square) => addSides(square));
+}
+
 
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
 function startGame() {
   myGameArea.start();
+  //Draw Background
+  component(canvas.width, canvas.height, colors.lessDark, 0, 0);
 
   //Generate drawn squares for playable squares on the board.
   for (var key of Object.keys(board)) {
@@ -444,11 +503,12 @@ function startGame() {
     }
   }
   //Draw side boxes (walls)
-  component(25, 252, "black", 25, 149);
-  component(25, 252, "black", 250, 199);
+  makeBoardRegion(25, 252, colors.dark, 25.5, 149.5);
+  makeBoardRegion(25, 252, colors.dark, 250.5, 199.5);
+  // component(25, 252, colors.dark, 25.5, 149.5);
+  // component(25, 252, colors.dark, 250.5, 199.5);
 
   //Add Special buttons (e.g. pushButton)
-  component(60, 50, "#EF1B13", 295, 100);
   textBox(board.pushButton, "#FEFEFE", "Arial", 18, "PUSH");
   textBox(board.moveButton, "#FEFEFE", "Arial", 18, "MOVE");
 
@@ -461,22 +521,6 @@ function startGame() {
   drawAnyPiece(board["d5"], "brownRound");
 }
 
-
-/* Draw any polygon given an object with x,y properties for offset,
-array of coordinates, color, stroke, and fill options (with defaults).
-*/
-
-function drawPoly(offsetObj, coords, options = arrow.options){
-  const {x, y} = offsetObj;
-  const ctx = myGameArea.context;
-  ctx.fillStyle = options.fillStyle;
-  ctx.strokeStyle = options.strokeStyle;
-  ctx.beginPath();
-  coords.forEach((pair) => ctx.lineTo(pair[0] + x, pair[1] + y));
-  ctx.closePath();
-  (options.fill) ? ctx.fill() : {};
-  (options.stroke) ? ctx.stroke() : {};
-}
 
 
 
@@ -510,16 +554,19 @@ canvas.addEventListener('click', (e) => {
     console.log("board[name]: ", board[name]);
     console.log("board[name].x: ", board[name].x);
 
-    highlightSquare("pushButton");
+    highlightSquare(board.pushButton);
   }
   console.log("space: ", space);
   if (space) {
-    if (turn.phase == "choosePiece1"){
-      choosePiece(space);
-      advanceTurn();
+    if (turn.phase == "move1" || turn.phase == "move2"){
+      // choosePiece(space);
+      // advanceTurn();
+      console.log(handleMove(space));
     } else {
-      move(turn.movePieceAt, space);
-      turn.phase = "choosePiece1";
+      console.log("push isn't ready yet");
+      console.log("resetting turn")
+      turn.phase = "move1";
+
     }
   }
 
