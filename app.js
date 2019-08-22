@@ -1,5 +1,8 @@
 "use strict";
 
+// Potential color scheme: Harbor
+// Hex: 354649 / 6C7A89 / A3C6C4 / E0E7E9
+
 
 //Canvas variables.
 const canvas = document.getElementById("canvas");
