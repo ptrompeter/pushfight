@@ -2,6 +2,12 @@
 
 // Potential color scheme: Harbor
 // Hex: 354649 / 6C7A89 / A3C6C4 / E0E7E9
+const colors = {
+  "dark": "#354649",
+  "gray": "#6C7A89",
+  "teal": "#A3C5C4",
+  "light": "#E0E7E9"
+}
 
 
 //Canvas variables.
@@ -45,8 +51,8 @@ let anchorSquare = "";
 
 const arrow = {}
 arrow.options = {}
-arrow.options.fillStyle = '#F9DC05';
-arrow.options.strokeStyle = 'black';
+arrow.options.fillStyle = colors.light;
+arrow.options.strokeStyle = colors.dark;
 arrow.options.fill = true;
 arrow.options.stroke = true;
 
@@ -77,6 +83,7 @@ addSpecialSquares(board);
 //Make a function to draw the outlines of empty rectangles.
 function makeBoardRegion(width, height, color, x, y) {
   const ctx = myGameArea.context;
+  component(width, height, color, x, y);
   ctx.strokeRect(x, y, width, height);
 }
 
@@ -93,9 +100,10 @@ function drawCircle(radius, color, x, y){
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, 2*Math.PI);
   ctx.closePath();
-  ctx.stroke();
   ctx.fillStyle = color;
   ctx.fill();
+  ctx.stroke();
+  
 }
 
 //make a function to clear a region and redraw it.
@@ -146,17 +154,17 @@ function textBox(box, textColor, font, fontsize, text) {
 
 //Draw any piece, given a space and a piece-name.
 function drawAnyPiece(space, piece = ""){
-  component(48, 48, "#DDFAFD", space.x + 1, space.y +1);
+  component(48, 48, colors.teal, space.x + 1, space.y +1);
   if (piece == "whiteSquare"){
-    component(30, 30, "#FBD5AC", space.x + 10, space.y + 10);
+    component(30, 30, colors.light, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   } else if (piece == "brownSquare"){
-    component(30, 30, "#915C1E", space.x + 10, space.y + 10);
+    component(30, 30, colors.gray, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   } else if (piece == "whiteRound"){
-    drawCircle(15, "#FBD5AC", space.x + 25, space.y + 25);
+    drawCircle(15, colors.light, space.x + 25, space.y + 25);
   } else if (piece == "brownRound"){
-    drawCircle(15, "#915C1E", space.x + 25, space.y + 25);
+    drawCircle(15, colors.gray, space.x + 25, space.y + 25);
   } else {
     clear(space);
   }
@@ -348,7 +356,7 @@ function standardBoard(){
       board[name] = {
         width: 50,
         height: 50,
-        color: "black",
+        color: colors.teal,
         x: (columns.indexOf(column) * 50),
         y: (i * 50 + 50),
         name: name,
@@ -401,7 +409,7 @@ function addSpecialSquares(board){
   const pushButton1 = {
     width: 60,
     height: 50,
-    color: "#EF1B13",
+    color: colors.dark,
     x: 295,
     y: 100,
     name: "pushButton",
@@ -417,7 +425,7 @@ function addSpecialSquares(board){
   const moveButton = {
     width: 60,
     height: 50,
-    color: "#EF1B13",
+    color: colors.dark,
     x: 295,
     y: 180,
     name: "moveButton",
@@ -436,6 +444,8 @@ function addSpecialSquares(board){
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
 function startGame() {
   myGameArea.start();
+  //Draw Background
+  component(canvas.width, canvas.height, colors.gray, 0, 0);
 
   //Generate drawn squares for playable squares on the board.
   for (var key of Object.keys(board)) {
@@ -444,11 +454,10 @@ function startGame() {
     }
   }
   //Draw side boxes (walls)
-  component(25, 252, "black", 25, 149);
-  component(25, 252, "black", 250, 199);
+  component(25, 252, colors.dark, 25, 149);
+  component(25, 252, colors.dark, 250, 199);
 
   //Add Special buttons (e.g. pushButton)
-  component(60, 50, "#EF1B13", 295, 100);
   textBox(board.pushButton, "#FEFEFE", "Arial", 18, "PUSH");
   textBox(board.moveButton, "#FEFEFE", "Arial", 18, "MOVE");
 
