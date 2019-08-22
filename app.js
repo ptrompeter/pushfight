@@ -113,13 +113,12 @@ function clear(space) {
 }
 
 //draw a highlighted region around a selected square.
-function highlightSquare(spaceName){
-  let target = board[spaceName];
+function highlightSquare(space){
   const ctx = myGameArea.context;
   let defaultColor = ctx.strokeStyle;
   ctx.lineWidth = 3;
   ctx.strokeStyle = "#EEF11C";
-  ctx.strokeRect(target.x + 3, target.y + 3, target.width - 6, target.height -6);
+  ctx.strokeRect(space.x + 3, space.y + 3, space.width - 6, space.height -6);
   ctx.lineWidth = 1;
   ctx.strokeStyle = defaultColor;
 }
@@ -189,24 +188,14 @@ function updateSpace(space) {
 
 //FUNCTIONS TO MANIPULATE PIECES
 
-//function to select a piece for movement
-function choosePiece(spaceName){
-  turn.movePieceAt = spaceName;
-  turn.piece = board[spaceName].piece;
-  highlightSquare(spaceName);
+//Select a piece for movement.
+function choosePiece(space){
+  turn.movePieceAt = space;
+  turn.piece = space.piece;
+  highlightSquare(space);
 }
 
-//function to move a selected space to a new square.
-//TODO: make this function obsolete, the delete
-function movePiece(spaceName){
-  let moveTo = board[spaceName];
-  let moveFrom = board[turn.movePieceAt];
-  moveTo.piece = turn.piece;
-  moveFrom.piece = "";
-  clearSpace(moveFrom.name);
-  drawPiece(turn.piece, spaceName);
-}
-//writing a superior move function that just takes spaces as arguments
+//Move a piece from one square to another.
 function move(startSpace, targetSpace){
   if (targetSpace.piece || !targetSpace.placeable) {
     return "move failed.";
@@ -496,37 +485,37 @@ function isIntersect(point, box) {
     console.log(box.name);
     console.log("x,y: ", point.x, point.y);
     console.log("box coords: ", box.x, box.y);
-    return box.name;
-  } else {
-    console.log('outside clickable region.')
+    return box;
   }
 }
 //adding a canvas event listener that can respond to clicking on boxes
 canvas.addEventListener('click', (e) => {
-  let name = "";
+  let space = "";
   const point = {
     x: e.clientX - canvas.offsetLeft,
     y: e.clientY - canvas.offsetTop
   };
   for (var box of Object.values(board)) {
-    name = isIntersect(point, box);
-    if (name) {
+    space = isIntersect(point, box);
+    if (space) {
       break;
     };
   }
-  if (name == "pushButton") {
+  (!space) ? console.log("outside clickable region") : {};
+  if (space.name == "pushButton") {
     console.log("name: ", name);
     console.log("board[name]: ", board[name]);
     console.log("board[name].x: ", board[name].x);
 
     highlightSquare("pushButton");
   }
-  if (name) {
+  console.log("space: ", space);
+  if (space) {
     if (turn.phase == "choosePiece1"){
-      choosePiece(name);
+      choosePiece(space);
       advanceTurn();
     } else {
-      movePiece(name);
+      move(turn.movePieceAt, space);
       turn.phase = "choosePiece1";
     }
   }
