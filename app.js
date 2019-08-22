@@ -133,16 +133,17 @@ function highlightSquare(space){
 }
 
 //draw a filled box with text.
-function textBox(box, textColor, font, fontsize, text) {
+function textBox(box, textColor, font, fontsize, text, outline = true, textborder = false) {
   const {width, height, color, x, y} = box;
   const ctx = myGameArea.context;
-  component(width, height, color, x, y);
+  (outline) ? makeBoardRegion(width, height, color, x, y) : component(width, height, color, x, y);
   let defaultFont = ctx.font;
   let defaultColor = ctx.fillStyle;
   ctx.font = String(fontsize) + "px " + font;
   ctx.fillStyle = textColor;
   ctx.textAlign = "center";
   ctx.fillText(text, (x + width / 2), (y + height / 2 + fontsize / 3));
+  if (textborder) ctx.strokeText(text, (x + width / 2), (y + height / 2 + fontsize / 3));
   ctx.font = defaultFont;
   ctx.fillStyle = defaultColor;
 }
@@ -503,8 +504,8 @@ function startGame() {
     }
   }
   //Draw side boxes (walls)
-  makeBoardRegion(25, 252, colors.dark, 25.5, 149.5);
-  makeBoardRegion(25, 252, colors.dark, 250.5, 199.5);
+  makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
+  makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
   // component(25, 252, colors.dark, 25.5, 149.5);
   // component(25, 252, colors.dark, 250.5, 199.5);
 
