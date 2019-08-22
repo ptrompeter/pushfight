@@ -505,8 +505,8 @@ function isIntersect(point, box) {
 canvas.addEventListener('click', (e) => {
   let name = "";
   const point = {
-    x: e.clientX,
-    y: e.clientY
+    x: e.clientX - canvas.offsetLeft,
+    y: e.clientY - canvas.offsetTop
   };
   for (var box of Object.values(board)) {
     name = isIntersect(point, box);
