@@ -33,8 +33,44 @@ const turn = {
   piece: ""
 };
 
+/* Adding a control object for pushes.
+Right now, I'm returning strings for all outcomes of pushPiece, successful or not.
+This is mostly for error handling, so I can see what's wrong.  It also might be
+useful to send instructive messages about what's happening when a player tries to make
+an illegal move.  The unfortunate consequence is that pushPiece and firstPush always
+return truthy values.  The testPush method converts those strings to the square to be
+targeted for pushing, if legal, or false if not.  I'll use that data to draw and
+remove arrows on the UI. Is there a better way to do this? I hope I think of one. */
 const pushControl = {};
 pushControl.space = false;
+pushControl.targets = {}
+pushControl.directions = ["up", "down", "left", "right"]
+pushControl.testPush = function() {
+  let trueStrings = ['push_ok', ['endgame'], ['brown win'], ['white win']]
+  if (!pushControl.space) return "pushControl.space has not been set";
+  this.directions.forEach(function(direction){
+    pushControl.targets[direction] = firstPush(pushControl.space, direction, true);
+    pushControl.targets[direction] = (trueStrings.includes(pushControl.targets[direction])) ? pushControl.space[direction] : false;
+  })
+  // this.targets.up = firstPush(this.space, "up", true)
+  // this.targets.up = (trueStrings.includes(this.targets.up)) ? this.space.up : false;
+  // this.targets.down = firstPush(this.space, "down", true)
+  // this.targets.down = (trueStrings.includes(this.targets.down)) ? this.space.down : false;
+  // this.targets.left = firstPush(this.space, "left", true)
+  // this.targets.left = (trueStrings.includes(this.targets.left)) ? this.space.left : false;
+  // this.targets.right = firstPush(this.space, "right", true)
+  // this.targets.right = (trueStrings.includes(this.targets.right)) ? this.space.right : false;
+}
+pushControl.drawArrows = function() {
+  Object.entries(this.targets).forEach(([key, value]) => drawPoly(value, arrow[key], arrow.options));
+}
+pushControl.clearArrows = function() {
+  Object.values(this.targets).forEach((value) => updateSpace(value));
+}
+pushControl.reset = function() {
+  this.space = false;
+  this.targets = {};
+}
 
 const moveControl = {};
 moveControl.space = false;
@@ -234,7 +270,15 @@ function move(startSpace, targetSpace){
 }
 
 //FUNCTIONS TO EFFECT A PUSH
-
+//This function handles special conditions for the beginning of a push,
+//then calls pushPiece to handle most of the work.
+function firstPush(space, direction, test = false) {
+  if (!matchPiece(space)) return "wrong color";
+  if (space.piece == "whiteRound" || space.piece == "brownRound") return "wrong shape";
+  if (!space[direction]) return "push must target an adjacent square";
+  if (!space[direction].piece) return "push must target an adjacent piece";
+  return pushPiece(space, direction, test);
+}
 //Run a sequence of functions to control a push.
 
 /* Adding a test optional parameter so I can check
@@ -245,7 +289,6 @@ function pushPiece(space, direction, test = false){
   if (space.hasAnchor || !space.pushable) {
     return "blocked";
   }
-  if (space.piece != "whiteSquare" || space.piece != "brownSquare") return "blocked";
   if (space.placeable && !space.piece){
     return "push_ok";
   }
@@ -333,7 +376,39 @@ function handleMove(space){
 }
 
 //Handle game logic during a Push phase
-function handlePush(space){}
+function handlePush(space){
+  //Handle selection of piece to be pushed
+  if (!pushControl.space) {
+    //Handle illegal piece choices: wrong color, wrong shape, empty square
+    if (!matchPiece(space) || !hasPiece(space) || space.piece.slice(5, 11) != "Square") {
+      return `Choose a tile with one of your square pieces, ${turn.player}.`;
+    }
+    //Handle valid piece selection
+    highlightSquare(space);
+    pushControl.space = space;
+    //This tests a space's directions
+    pushControl.testPush();
+    //This draws arrows on legal push spaces
+    pushControl.drawArrows();
+
+
+    return "Click on an empty square to move, or on the highlighted square to cancel."
+  } else if (space == moveControl.space){
+    updateSpace(space);
+    moveControl.space = "";
+    return "Move cancelled."
+  } else {
+    if (hasPiece(space)) return "You cannot move onto an occupied space.";
+    let message = move(moveControl.space, space);
+    if (message == "move complete.") {
+      advanceTurn();
+      moveControl.space = ""
+      return message;
+    } else {
+      return message;
+    }
+  }
+}
 
 //Handle game logic during endturn phase...maybe unnecessary?
 function endTurn(){}
@@ -575,14 +650,3 @@ canvas.addEventListener('click', (e) => {
 
 //Adding a call to start the game on page load.
 startGame();
-//Adding some function tests
-//
-// console.log(pushPiece(board.c4, "right"));
-// console.log(pushPiece(board.c5, "up"));
-// console.log(pushPiece(board.e4, "right"));
-// console.log(pushPiece(board.e4, "up"));
-// console.log(pushPiece(board.e3, "up"));
-drawPoly(board.b3, arrow.up);
-drawPoly(board.c3, arrow.left);
-drawPoly(board.d3, arrow.right);
-drawPoly(board.e3, arrow.down);
