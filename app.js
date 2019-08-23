@@ -589,8 +589,6 @@ function startGame() {
   //Draw side boxes (walls)
   makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
-  // component(25, 252, colors.dark, 25.5, 149.5);
-  // component(25, 252, colors.dark, 250.5, 199.5);
 
   //Add Special buttons (e.g. pushButton)
   textBox(board.pushButton, "#FEFEFE", "Arial", 18, "PUSH");
