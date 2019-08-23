@@ -45,28 +45,27 @@ const pushControl = {};
 pushControl.space = false;
 pushControl.targets = {}
 pushControl.directions = ["up", "down", "left", "right"]
+pushControl.trueStrings = ['push_ok', ['endgame'], ['brown win'], ['white win']]
+
+//Test pushing in each direction from selected space; set pushControl.targets[direction]
+//property of square that can be legally pushed.
 pushControl.testPush = function() {
   let trueStrings = ['push_ok', ['endgame'], ['brown win'], ['white win']]
   if (!pushControl.space) return "pushControl.space has not been set";
   this.directions.forEach(function(direction){
     pushControl.targets[direction] = firstPush(pushControl.space, direction, true);
-    pushControl.targets[direction] = (trueStrings.includes(pushControl.targets[direction])) ? pushControl.space[direction] : false;
+    pushControl.targets[direction] = (pushControl.trueStrings.includes(pushControl.targets[direction])) ? pushControl.space[direction] : false;
   })
-  // this.targets.up = firstPush(this.space, "up", true)
-  // this.targets.up = (trueStrings.includes(this.targets.up)) ? this.space.up : false;
-  // this.targets.down = firstPush(this.space, "down", true)
-  // this.targets.down = (trueStrings.includes(this.targets.down)) ? this.space.down : false;
-  // this.targets.left = firstPush(this.space, "left", true)
-  // this.targets.left = (trueStrings.includes(this.targets.left)) ? this.space.left : false;
-  // this.targets.right = firstPush(this.space, "right", true)
-  // this.targets.right = (trueStrings.includes(this.targets.right)) ? this.space.right : false;
 }
+//Draw arrows on valid push directions.
 pushControl.drawArrows = function() {
   Object.entries(this.targets).forEach(([key, value]) => drawPoly(value, arrow[key], arrow.options));
 }
+//Clear arrows from valid push directions.
 pushControl.clearArrows = function() {
   Object.values(this.targets).forEach((value) => updateSpace(value));
 }
+//Clear pushControl variable.
 pushControl.reset = function() {
   this.space = false;
   this.targets = {};
@@ -78,7 +77,7 @@ moveControl.space = false;
 //Create an array of turn phases (in order of normal progression).
 const phaseArray = ["move1", "move2", "push", "endTurn"];
 // List of unplayable tile names
-// used for board generation, (and maybe win detection and push logic).
+// used for board generation, setting non-standard tile properties.
 const borderTiles = ["a2", "a3", "a4", "a5", "a6", "b1", "b7",
                       "b8", "c0", "c9", "d0", "d9", "e1", "e2",
                       "e8", "f3", "f4", "f5", "f6", "f7"
@@ -89,6 +88,7 @@ let anchorSquare = "";
 
 //Variables for drawing images on CANVAS
 
+//Add arrow variable with coordinates to draw arrows in various directions.
 const arrow = {}
 arrow.options = {}
 arrow.options.fillStyle = colors.light;
@@ -100,9 +100,6 @@ arrow.up = [
             [25, 5], [45, 25], [30, 25], [30, 45],
             [20, 45], [20, 25], [5, 25], [25, 5]
             ];
-
-// arrow.up.forEach((pair) => {pair[0] += .5; pair[1] += .5});
-
 
 arrow.left = [];
 arrow.up.forEach((pair) => arrow.left.push([pair[1], pair[0]]));
@@ -209,12 +206,12 @@ function drawAnyPiece(space, piece = ""){
     component(30, 30, colors.light, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   } else if (piece == "brownSquare"){
-    component(30, 30, colors.lessDark, space.x + 10, space.y + 10);
+    component(30, 30, colors.dark, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   } else if (piece == "whiteRound"){
     drawCircle(15, colors.light, space.x + 25, space.y + 25);
   } else if (piece == "brownRound"){
-    drawCircle(15, colors.lessDark, space.x + 25, space.y + 25);
+    drawCircle(15, colors.dark, space.x + 25, space.y + 25);
   } else {
     clear(space);
   }
@@ -222,21 +219,20 @@ function drawAnyPiece(space, piece = ""){
 }
 
 //draw a red highlight around a piece to indicate anchor.
-function addAnchor(spaceName){
-  let target = board[spaceName];
+function addAnchor(space){
   const ctx = myGameArea.context;
   let defaultColor = ctx.strokeStyle;
   ctx.lineWidth = 5;
-  ctx.strokeStyle = "#EF1B13";
-  ctx.strokeRect(target.x + 5, target.y + 5, target.width - 10, target.height -10);
+  ctx.strokeStyle = "black";
+  ctx.strokeRect(space.x + 5, space.y + 5, space.width - 10, space.height -10);
   ctx.lineWidth = 1;
   ctx.strokeStyle = defaultColor;
   if (anchorSquare) {
-    board[anchorSquare].hasAnchor = false;
-    drawPiece(board[anchorSquare].piece, anchorSquare);
+    anchorSquare.hasAnchor = false;
+    updateSpace(anchorSquare);
   }
-  anchorSquare = spaceName;
-  target.hasAnchor = true;
+  anchorSquare = space;
+  space.hasAnchor = true;
 }
 
 //I need a better drawing function that just draws whatever is on the square
@@ -286,7 +282,7 @@ for legal pushes without moving pieces.  (Having
 no legal pushes after one's moves is a lose
 condition.) */
 function pushPiece(space, direction, test = false){
-  if (space.hasAnchor || !space.pushable) {
+  if (space == anchorSquare || !space.pushable) {
     return "blocked";
   }
   if (space.placeable && !space.piece){
@@ -386,24 +382,29 @@ function handlePush(space){
     //Handle valid piece selection
     highlightSquare(space);
     pushControl.space = space;
-    //This tests a space's directions
+    //Test a space's directions for legal pushes.
     pushControl.testPush();
-    //This draws arrows on legal push spaces
+    //Draw arrows on legal push spaces
     pushControl.drawArrows();
-
-
-    return "Click on an empty square to move, or on the highlighted square to cancel."
-  } else if (space == moveControl.space){
+    return "Click on an arrow to push, or on the highlighted square to cancel."
+    //Handle push cancellation.
+  } else if (space == pushControl.space){
     updateSpace(space);
-    moveControl.space = "";
-    return "Move cancelled."
+    pushControl.clearArrows();
+    pushControl.reset();
+    return "Push cancelled."
+    //Handle push attempt.
   } else {
-    if (hasPiece(space)) return "You cannot move onto an occupied space.";
-    let message = move(moveControl.space, space);
-    if (message == "move complete.") {
+    let direction = Object.keys(pushControl.targets).find(key => pushControl.targets[key] === space);
+    let message = firstPush(pushControl.space, direction);
+    //Cleanup commands to run on execution of legal push.
+    if (pushControl.trueStrings.includes(message)){
+      pushControl.clearArrows();
+      pushControl.reset();
+      addAnchor(space);
       advanceTurn();
-      moveControl.space = ""
       return message;
+      //return message on illegal push.
     } else {
       return message;
     }
