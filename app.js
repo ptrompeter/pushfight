@@ -28,9 +28,6 @@ var myGameArea = {
 const turn = {
   player: "white",
   phase: "move1",
-  movePieceAt: "",
-  movePieceTo: "",
-  piece: ""
 };
 
 /* Adding a control object for pushes.
@@ -75,7 +72,7 @@ const moveControl = {};
 moveControl.space = false;
 
 //Create an array of turn phases (in order of normal progression).
-const phaseArray = ["move1", "move2", "push", "endTurn"];
+const phaseArray = ["move1", "move2", "push"];
 // List of unplayable tile names
 // used for board generation, setting non-standard tile properties.
 const borderTiles = ["a2", "a3", "a4", "a5", "a6", "b1", "b7",
@@ -245,15 +242,8 @@ function updateSpace(space) {
 
 //FUNCTIONS TO MANIPULATE PIECES
 
-//Select a piece for movement.
-function choosePiece(space){
-  turn.movePieceAt = space;
-  turn.piece = space.piece;
-  highlightSquare(space);
-}
-
 //Move a piece from one square to another.
-function move(startSpace, targetSpace){
+function move(startSpace, targetSpace) {
   if (targetSpace.piece || !targetSpace.placeable) {
     return "move failed.";
   }
@@ -281,11 +271,11 @@ function firstPush(space, direction, test = false) {
 for legal pushes without moving pieces.  (Having
 no legal pushes after one's moves is a lose
 condition.) */
-function pushPiece(space, direction, test = false){
+function pushPiece(space, direction, test = false) {
   if (space == anchorSquare || !space.pushable) {
     return "blocked";
   }
-  if (space.placeable && !space.piece){
+  if (space.placeable && !space.piece) {
     return "push_ok";
   }
   if (space.endgame) {
@@ -328,13 +318,13 @@ function pushPiece(space, direction, test = false){
 //CONTROLLER FUNCTIONS FOR GAME
 
 //Function to change active player
-function changePlayer(){
+function changePlayer() {
   turn.player = (turn.player == "white") ? "brown" : "white";
 }
 
 //Move turn.phase forward
-function advanceTurn(){
-  if (turn.phase == "endTurn"){
+function advanceTurn() {
+  if (turn.phase == "push"){
     turn.phase = "move1";
     changePlayer();
   } else {
@@ -348,7 +338,7 @@ let hasPiece = space => (space.piece) ? true: false;
 let matchPiece = space => (turn.player == space.piece.slice(0,5)) ? true: false;
 
 //Handle game logic during a Move phase
-function handleMove(space){
+function handleMove(space) {
   if (!moveControl.space) {
     if (!matchPiece(space) || (!hasPiece(space))) return `Choose a tile with one of your pieces, ${turn.player}.`;
     highlightSquare(space);
@@ -372,7 +362,7 @@ function handleMove(space){
 }
 
 //Handle game logic during a Push phase
-function handlePush(space){
+function handlePush(space) {
   //Handle selection of piece to be pushed
   if (!pushControl.space) {
     //Handle illegal piece choices: wrong color, wrong shape, empty square
@@ -388,7 +378,7 @@ function handlePush(space){
     pushControl.drawArrows();
     return "Click on an arrow to push, or on the highlighted square to cancel."
     //Handle push cancellation.
-  } else if (space == pushControl.space){
+  } else if (space == pushControl.space) {
     updateSpace(space);
     pushControl.clearArrows();
     pushControl.reset();
@@ -398,7 +388,7 @@ function handlePush(space){
     let direction = Object.keys(pushControl.targets).find(key => pushControl.targets[key] === space);
     let message = firstPush(pushControl.space, direction);
     //Cleanup commands to run on execution of legal push.
-    if (pushControl.trueStrings.includes(message)){
+    if (pushControl.trueStrings.includes(message)) {
       pushControl.clearArrows();
       pushControl.reset();
       addAnchor(space);
@@ -412,7 +402,24 @@ function handlePush(space){
 }
 
 //Handle game logic during endturn phase...maybe unnecessary?
-function endTurn(){}
+function endTurn() {
+  console.log("hitting endTurn");
+  console.log("turn before endTurn:", turn);
+  turn.phase = "Move1";
+  changePlayer();
+  console.log("turn after endTurn:", turn);
+  return `${turn.player} player: begin turn!`
+}
+//Manage game.
+function handleGame(space) {
+  if (turn.phase == "move1" || turn.phase == "move2") {
+    console.log(handleMove(space));
+  } else if (turn.phase == "push") {
+    console.log(handlePush(space));
+  } else {
+    console.log(endTurn());
+  }
+}
 
 //CODE BLOCK TO GENERATE A COMPLETE BOARD OBJECT.  CONSIDER REFACTOR?
 
@@ -625,7 +632,7 @@ canvas.addEventListener('click', (e) => {
       break;
     };
   }
-  (!space) ? console.log("outside clickable region") : {};
+  if (!space) console.log("outside clickable region");
   if (space.name == "pushButton") {
     console.log("name: ", name);
     console.log("board[name]: ", board[name]);
@@ -635,18 +642,12 @@ canvas.addEventListener('click', (e) => {
   }
   console.log("space: ", space);
   if (space) {
-    if (turn.phase == "move1" || turn.phase == "move2"){
-      // choosePiece(space);
-      // advanceTurn();
-      console.log(handleMove(space));
+    console.log("starting handleGame");
+    handleGame(space);
     } else {
-      console.log("push isn't ready yet");
-      console.log("resetting turn")
-      turn.phase = "move1";
+      console.log("did not click on space");
 
     }
-  }
-
 })
 
 //Adding a call to start the game on page load.
