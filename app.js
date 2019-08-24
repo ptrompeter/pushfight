@@ -371,7 +371,10 @@ function advanceTurn() {
 //Test whether a space is occupied
 let hasPiece = space => (space.piece) ? true: false;
 //Test whether a selected piece belongs to the current player
-let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false;
+function matchPiece(space) {
+  const player = (setupTracker.setup) ? setupTracker.player : turn.player;
+  return (player == space.piece.slice(0,8)) ? true : false;  
+}
 
 //Handle game logic during a Move phase
 function handleMove(space) {
@@ -457,6 +460,10 @@ function handleGame(space) {
   }
 }
 //Setup phase functions.
+//Controller function for setup
+function handleSetup(space){
+
+}
 //Move piece from reserve to space; all error handling to be done in handleSetup.
 function setupPiece(startSpace, targetSpace){
   drawAnyPiece(targetSpace, startSpace.piece);
