@@ -456,7 +456,7 @@ function handleGame(space) {
 }
 //Setup phase functions.
 //Place light pieces
-function setupPiece(player, Space){
+function setupPiece(player, space){
 
 }
 
@@ -549,6 +549,9 @@ function standardBoard(){
   return board;
 }
 
+/* TODO: The following functions are used for initial board setup.
+They should probably be reorganized. */
+
 //adding a function to create 1-off special squares
 function addSpecialSquares(board){
   const pushButton1 = {
@@ -584,56 +587,132 @@ function addSpecialSquares(board){
   }
   board.moveButton = moveButton;
 }
-//
+//Generate setup piece reserve boxes and draw them.
 function makePieceReserve(player, piece, number){
   try {
-    let name = `${player} ${piece}`;
+    let name = player + piece[0].toUpperCase() + piece.slice(1) + "Reserve";
     console.log("try name:", name);
     if (!board[name]) throw new Error("must generate reserve regions.");
   } catch(error){
     console.log(error);
     //generate reserve spaces if none exist. Refactor?
     let space = {};
-    space.width = 100;
+    space.width = 150;
     space.height = 50;
     space.color = colors.lessLight;
     space.x = 25.5;
     space.y = 25.5;
-    space.name = "player_1 square";
-    space.piece = "square";
+    space.piece = "player_1Square";
+    space.name = space.piece + "Reserve";
     space.drawable = true;
     board[space.name] = space;
 
     let space2 = {}
     Object.entries(space).forEach(([key, value]) => space2[key] = value)
-    space2.x += 150;
-    space2.name = "player_1 round";
-    space2.piece = "round";
+    space2.x += 200;
+    space2.piece = "player_1Round";
+    space2.name = space2.piece + "Reserve";
     board[space2.name] = space2;
 
     let space3 = {}
     Object.entries(space2).forEach(([key, value]) => space3[key] = value)
     space3.y += 500;
-    space3.name = "player_2 round";
+    space3.piece = "player_2Round";
+    space3.name = space3.piece + "Reserve";
     board[space3.name] = space3;
 
     let space4 = {}
     Object.entries(space3).forEach(([key, value]) => space4[key] = value)
-    space4.x -= 150;
-    space4.name = "player_2 square";
-    space4.piece = "square";
+    space4.x -= 200;
+    space4.piece = "player_2Square";
+    space4.name = space4.piece + "Reserve";
     board[space4.name] = space4;
 
-    console.log("reserves generated.");
+    console.log("reserve squares generated.");
+    console.log(board[space4.name]);
   } finally {
-    let drawSpace = board[`${player} ${piece}`];
-    console.log(`${player} ${piece}`);
+    let name = player + piece[0].toUpperCase() + piece.slice(1) + "Reserve";
+    let drawSpace = board[name];
+    console.log(name);
     console.log(drawSpace);
     makeBoardRegion(drawSpace.width, drawSpace.height, drawSpace.color, drawSpace.x, drawSpace.y);
 
   }
 }
 
+/* Add Pieces to setup boxes. - Plan is to run on initial draw and after every piece is first placed.
+TODO: Reorganize these functions in the file.  PopulateReserves is really a setup handler helper function.
+the drawing functions should go with the other drawing functions, I imagine.
+TODO: Maybe refactor other functions to use addSquare and addCircle...Hide obnoxious
+component and strokeRect pattern.  */
+
+function populateReserves(){
+  if (setupTracker.player == "player_1") {
+    generateSquares(board["player_1SquareReserve"], "player_1", setupTracker.pieces.square);
+    generateCircles(board["player_1RoundReserve"], "player_1", setupTracker.pieces.round);
+    generateSquares(board["player_2SquareReserve"], "player_2", 3);
+    generateCircles(board["player_2RoundReserve"], "player_2", 2);
+  } else {
+    generateSquares(board["player_1SquareReserve"], "player_1", 0);
+    generateCircles(board["player_1RoundReserve"], "player_1", 0);
+    generateSquares(board["player_2SquareReserve"], "player_2", setupTracker.pieces.square);
+    generateCircles(board["player_2RoundReserve"], "player_2", setupTracker.pieces.round);
+  }
+
+
+}
+//Draw a square on a region.  Centers on 50px / 50px box by default.
+//Options will take x, y to give specific offset.
+function addSquare(offsetObj, color, options = {}) {
+  let {width, height, x, y} = offsetObj;
+  if (options == {}) {
+    component(30, 30, color, space.x + 10, space.y + 10);
+    myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
+  }  else {
+    let {width, height, x, y} = options;
+    component(width, height, color, x, y);
+    myGameArea.context.strokeRect(x, y, width, height);
+  }
+}
+
+//Draw a circle on a region.  Centers on box by default.
+//Options will take x, y, radius to give specific offset.
+function addCircle(offsetObj, color, options = {}) {
+  let {width, height, x, y} = offsetObj;
+  if (options == {}) {
+    drawCircle(15, color, x + (width / 2), y + (height / 2));
+  } else {
+    let {radius, x, y} = options;
+    drawCircle(radius, color, x, y);
+  }
+}
+
+//generate a number of standard squares in a row
+function generateSquares(offsetObj, player, number) {
+  let {x, y} = offsetObj;
+  for (var i = 0; i < number; i++) {
+    let options = {}
+    options.height = 30;
+    options.width = 30;
+    options.color = (player == "player_1") ? colors.light : colors.dark;
+    options.x = x + 10 + (options.width + 10) * i;
+    options.y = y + 10;
+    addSquare(offsetObj, options.color, options);
+  }
+}
+
+//generate a number of standard circles in a row
+function generateCircles(offsetObj, player, number){
+  let {x, y} = offsetObj;
+  for (var i = 0; i < number; i++) {
+    let options = {}
+    options.radius = 15;
+    options.color = (player == "player_1") ? colors.light : colors.dark;
+    options.x = x + 10 + options.radius + (options.radius * 2 + 10) * i;
+    options.y = y + 10 + options.radius;
+    addCircle(offsetObj, options.color, options);
+  }
+}
 //writing a single function to add up, down, left, and right properties to squares.
 function addSides(square){
   let column = square.name[0];;
@@ -681,11 +760,12 @@ function startGame() {
   //Add Special buttons (e.g. pushButton)
   textBox(board.pushButton, "#FEFEFE", "Arial", 18, "PUSH");
   textBox(board.moveButton, "#FEFEFE", "Arial", 18, "MOVE");
-  //Add setup regions
+  //Add setup regions and pieces to reserves.
   makePieceReserve("player_1", "square", setupTracker.pieces.square);
   makePieceReserve("player_2", "square", setupTracker.pieces.square);
   makePieceReserve("player_1", "round", setupTracker.pieces.round);
   makePieceReserve("player_2", "round", setupTracker.pieces.round);
+  populateReserves();
 
 
 
