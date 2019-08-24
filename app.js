@@ -176,11 +176,13 @@ function drawCircle(radius, color, x, y){
 }
 
 //new clear function that takes a space instead of a name.
-function clear(space) {
+//Added optional variable to allow wiping of  a space without changing
+//space.piece for setup handling.
+function clear(space, removePiece = true) {
   const ctx = myGameArea.context;
   ctx.clearRect(space.x, space.y, space.width, space.height);
   makeBoardRegion(space.width, space.height, space.color, space.x, space.y);
-  space.piece = "";
+  if (removePiece) space.piece = "";
 }
 
 //draw a highlighted region around a selected square.
@@ -455,8 +457,13 @@ function handleGame(space) {
   }
 }
 //Setup phase functions.
-//Place light pieces
-function setupPiece(player, space){
+//Move piece from reserve to space; all error handling to be done in handleSetup.
+function setupPiece(startSpace, targetSpace){
+  drawAnyPiece(targetSpace, startSpace.piece);
+  let piece = startSpace.piece.slice(8);
+  piece = piece[0].toLowerCase() + piece.slice(1);
+  --setupTracker.pieces[piece];
+  populateReserves();
 
 }
 
@@ -687,8 +694,12 @@ function addCircle(offsetObj, color, options = {}) {
   }
 }
 
-//generate a number of standard squares in a row
-function generateSquares(offsetObj, player, number) {
+//generate a number of standard squares in a row.
+//Added an option to first clear the region (without removing region.piece).
+function generateSquares(offsetObj, player, number, redraw = true) {
+  if (redraw) {
+    clear(offsetObj, false);
+  }
   let {x, y} = offsetObj;
   for (var i = 0; i < number; i++) {
     let options = {}
@@ -702,7 +713,10 @@ function generateSquares(offsetObj, player, number) {
 }
 
 //generate a number of standard circles in a row
-function generateCircles(offsetObj, player, number){
+function generateCircles(offsetObj, player, number, redraw = true){
+  if (redraw) {
+    clear(offsetObj, false);
+  }
   let {x, y} = offsetObj;
   for (var i = 0; i < number; i++) {
     let options = {}
