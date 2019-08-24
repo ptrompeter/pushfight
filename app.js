@@ -26,9 +26,37 @@ var myGameArea = {
 
 //Game Controller Variables.
 const turn = {
-  player: "white",
+  player: "player_1",
   phase: "move1",
 };
+
+//an object to manage setup phase
+const setupTracker = {
+  setup : true,
+  player : "player_1",
+  pieces : {
+    "round" : 2,
+    "square" : 3
+  }
+}
+setupTracker.allPlaced = function() {
+  return(this.pieces.round == 0 && this.pieces.round == 0) ? true : false;
+}
+setupTracker.placeRound = function() {
+  if (this.pieces.round > 0) this.pieces.round --;
+  return this.pieces.round
+}
+setupTracker.placeSquare = function() {
+  if (this.pieces.square > 0) this.pieces.square --;
+  return this.pieces.square
+}
+setupTracker.changePlayer = function() {
+  this.player = "player_2";
+}
+setupTracker.setupToggle = function() {
+  this.setup = (true) ? false : true;
+}
+
 
 /* Adding a control object for pushes.
 Right now, I'm returning strings for all outcomes of pushPiece, successful or not.
@@ -42,12 +70,12 @@ const pushControl = {};
 pushControl.space = false;
 pushControl.targets = {}
 pushControl.directions = ["up", "down", "left", "right"]
-pushControl.trueStrings = ['push_ok', ['endgame'], ['brown win'], ['white win']]
+pushControl.trueStrings = ['push_ok', ['endgame'], ['player_2 win'], ['player_1 win']]
 
 //Test pushing in each direction from selected space; set pushControl.targets[direction]
 //property of square that can be legally pushed.
 pushControl.testPush = function() {
-  let trueStrings = ['push_ok', ['endgame'], ['brown win'], ['white win']]
+  let trueStrings = ['push_ok', ['endgame'], ['player_2 win'], ['player_1 win']]
   if (!pushControl.space) return "pushControl.space has not been set";
   this.directions.forEach(function(direction){
     pushControl.targets[direction] = firstPush(pushControl.space, direction, true);
@@ -115,9 +143,11 @@ addSidesToBoard(board);
 addSpecialSquares(board);
 
 
+
 //BASIC FUNCTIONS FOR DRAWING AND ERASING SHAPES
 
 //Make a function to draw the outlines of empty rectangles.
+//TODO: Refactor to make this accept an object instead of 5 params
 function makeBoardRegion(width, height, color, x, y) {
   const ctx = myGameArea.context;
   component(width, height, color, x, y);
@@ -125,6 +155,8 @@ function makeBoardRegion(width, height, color, x, y) {
 }
 
 //this function draws filled rectangles.
+//TODO: Refactor to give this a better name
+//TODO: Refactor to make this accept an object instead of 5 params
 function component(width, height, color, x, y) {
   const ctx = myGameArea.context;
   ctx.fillStyle = color;
@@ -199,15 +231,15 @@ function drawPoly(offsetObj, coords, options = arrow.options){
 //Draw any piece, given a space and a piece-name.
 function drawAnyPiece(space, piece = ""){
   component(48, 48, colors.lessLight, space.x + 1, space.y +1);
-  if (piece == "whiteSquare"){
+  if (piece == "player_1Square"){
     component(30, 30, colors.light, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
-  } else if (piece == "brownSquare"){
+  } else if (piece == "player_2Square"){
     component(30, 30, colors.dark, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
-  } else if (piece == "whiteRound"){
+  } else if (piece == "player_1Round"){
     drawCircle(15, colors.light, space.x + 25, space.y + 25);
-  } else if (piece == "brownRound"){
+  } else if (piece == "player_2Round"){
     drawCircle(15, colors.dark, space.x + 25, space.y + 25);
   } else {
     clear(space);
@@ -231,6 +263,8 @@ function addAnchor(space){
   anchorSquare = space;
   space.hasAnchor = true;
 }
+// draw setup spaces
+
 
 //I need a better drawing function that just draws whatever is on the square
 function updateSpace(space) {
@@ -260,7 +294,7 @@ function move(startSpace, targetSpace) {
 //then calls pushPiece to handle most of the work.
 function firstPush(space, direction, test = false) {
   if (!matchPiece(space)) return "wrong color";
-  if (space.piece == "whiteRound" || space.piece == "brownRound") return "wrong shape";
+  if (space.piece == "player_1Round" || space.piece == "player_2Round") return "wrong shape";
   if (!space[direction]) return "push must target an adjacent square";
   if (!space[direction].piece) return "push must target an adjacent piece";
   return pushPiece(space, direction, test);
@@ -285,17 +319,17 @@ function pushPiece(space, direction, test = false) {
   let code = pushPiece(space[direction], direction, test);
   //Handle endgame and win responses from next square
   if (code == "endgame") {
-    if (space.piece == "whiteRound" || space.piece == "whiteSquare"){
-      return "brown win";
+    if (space.piece == "player_1Round" || space.piece == "player_1Square"){
+      return "player_2 win";
     }
     else {
-      return "white win";
+      return "player_1 win";
     }
   }
-  if (code == "brown win") {
+  if (code == "player_2 win") {
     return code;
   }
-  if (code == "white win") {
+  if (code == "player_1 win") {
     return code;
   }
   //Handle other responses
@@ -319,7 +353,7 @@ function pushPiece(space, direction, test = false) {
 
 //Function to change active player
 function changePlayer() {
-  turn.player = (turn.player == "white") ? "brown" : "white";
+  turn.player = (turn.player == "player_1") ? "player_2" : "player_1";
 }
 
 //Move turn.phase forward
@@ -335,7 +369,7 @@ function advanceTurn() {
 //Test whether a space is occupied
 let hasPiece = space => (space.piece) ? true: false;
 //Test whether a selected piece belongs to the current player
-let matchPiece = space => (turn.player == space.piece.slice(0,5)) ? true: false;
+let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false;
 
 //Handle game logic during a Move phase
 function handleMove(space) {
@@ -366,7 +400,7 @@ function handlePush(space) {
   //Handle selection of piece to be pushed
   if (!pushControl.space) {
     //Handle illegal piece choices: wrong color, wrong shape, empty square
-    if (!matchPiece(space) || !hasPiece(space) || space.piece.slice(5, 11) != "Square") {
+    if (!matchPiece(space) || !hasPiece(space) || space.piece.slice(8, 14) != "Square") {
       return `Choose a tile with one of your square pieces, ${turn.player}.`;
     }
     //Handle valid piece selection
@@ -419,6 +453,11 @@ function handleGame(space) {
   } else {
     console.log(endTurn());
   }
+}
+//Setup phase functions.
+//Place light pieces
+function setupPiece(player, Space){
+
 }
 
 //CODE BLOCK TO GENERATE A COMPLETE BOARD OBJECT.  CONSIDER REFACTOR?
@@ -545,6 +584,55 @@ function addSpecialSquares(board){
   }
   board.moveButton = moveButton;
 }
+//
+function makePieceReserve(player, piece, number){
+  try {
+    let name = `${player} ${piece}`;
+    console.log("try name:", name);
+    if (!board[name]) throw new Error("must generate reserve regions.");
+  } catch(error){
+    console.log(error);
+    //generate reserve spaces if none exist. Refactor?
+    let space = {};
+    space.width = 100;
+    space.height = 50;
+    space.color = colors.lessLight;
+    space.x = 50.5;
+    space.y = 50.5;
+    space.name = "player_1 square";
+    space.piece = "square";
+    space.drawable = true;
+    board[space.name] = space;
+    console.log(`${space.name}`, board[space.name])
+
+    space.x += 150;
+    space.name = "player_1 round";
+    space.piece = "round";
+    board[space.name] = space;
+    console.log(`${space.name}`, board[space.name])
+
+
+    space.y += 500;
+    space.name = "player_2 round";
+    board[space.name] = space;
+    console.log(`${space.name}`, board[space.name])
+
+
+    space.x -= 150;
+    space.name = "player_2 square";
+    space.piece = "square";
+    board[space.name] = space;
+    console.log(`${space.name}`, board[space.name])
+
+    console.log("reserves generated.");
+  } finally {
+    let space = board[`${player} ${piece}`];
+    console.log(`${player} ${piece}`);
+    console.log(space);
+    makeBoardRegion(space.width, space.height, space.color, space.x, space.y);
+
+  }
+}
 
 //writing a single function to add up, down, left, and right properties to squares.
 function addSides(square){
@@ -593,14 +681,20 @@ function startGame() {
   //Add Special buttons (e.g. pushButton)
   textBox(board.pushButton, "#FEFEFE", "Arial", 18, "PUSH");
   textBox(board.moveButton, "#FEFEFE", "Arial", 18, "MOVE");
+  //Add setup regions
+  makePieceReserve("player_1", "square", setupTracker.pieces.square);
+  makePieceReserve("player_2", "square", setupTracker.pieces.square);
+  makePieceReserve("player_1", "round", setupTracker.pieces.round);
+  makePieceReserve("player_2", "round", setupTracker.pieces.round);
+
 
 
 
   //Add tests for pieces
-  drawAnyPiece(board["c4"], "whiteSquare");
-  drawAnyPiece(board["d4"], "whiteRound");
-  drawAnyPiece(board["c5"], "brownSquare");
-  drawAnyPiece(board["d5"], "brownRound");
+  drawAnyPiece(board["c4"], "player_1Square");
+  drawAnyPiece(board["d4"], "player_1Round");
+  drawAnyPiece(board["c5"], "player_2Square");
+  drawAnyPiece(board["d5"], "player_2Round");
 }
 
 
