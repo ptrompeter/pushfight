@@ -597,39 +597,39 @@ function makePieceReserve(player, piece, number){
     space.width = 100;
     space.height = 50;
     space.color = colors.lessLight;
-    space.x = 50.5;
-    space.y = 50.5;
+    space.x = 25.5;
+    space.y = 25.5;
     space.name = "player_1 square";
     space.piece = "square";
     space.drawable = true;
     board[space.name] = space;
-    console.log(`${space.name}`, board[space.name])
 
-    space.x += 150;
-    space.name = "player_1 round";
-    space.piece = "round";
-    board[space.name] = space;
-    console.log(`${space.name}`, board[space.name])
+    let space2 = {}
+    Object.entries(space).forEach(([key, value]) => space2[key] = value)
+    space2.x += 150;
+    space2.name = "player_1 round";
+    space2.piece = "round";
+    board[space2.name] = space2;
 
+    let space3 = {}
+    Object.entries(space2).forEach(([key, value]) => space3[key] = value)
+    space3.y += 500;
+    space3.name = "player_2 round";
+    board[space3.name] = space3;
 
-    space.y += 500;
-    space.name = "player_2 round";
-    board[space.name] = space;
-    console.log(`${space.name}`, board[space.name])
-
-
-    space.x -= 150;
-    space.name = "player_2 square";
-    space.piece = "square";
-    board[space.name] = space;
-    console.log(`${space.name}`, board[space.name])
+    let space4 = {}
+    Object.entries(space3).forEach(([key, value]) => space4[key] = value)
+    space4.x -= 150;
+    space4.name = "player_2 square";
+    space4.piece = "square";
+    board[space4.name] = space4;
 
     console.log("reserves generated.");
   } finally {
-    let space = board[`${player} ${piece}`];
+    let drawSpace = board[`${player} ${piece}`];
     console.log(`${player} ${piece}`);
-    console.log(space);
-    makeBoardRegion(space.width, space.height, space.color, space.x, space.y);
+    console.log(drawSpace);
+    makeBoardRegion(drawSpace.width, drawSpace.height, drawSpace.color, drawSpace.x, drawSpace.y);
 
   }
 }
