@@ -26,6 +26,7 @@ var myGameArea = {
 
 //Game Controller Variables.
 const turn = {
+  setup: true,
   player: "player_1",
   phase: "move1",
 };
@@ -372,10 +373,11 @@ function advanceTurn() {
 //Test whether a space is occupied
 let hasPiece = space => (space.piece) ? true: false;
 //Test whether a selected piece belongs to the current player
-function matchPiece(space) {
-  const player = (setupTracker.setup) ? setupTracker.player : turn.player;
-  return (player == space.piece.slice(0,8)) ? true : false;
-}
+let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false
+// function matchPiece(space) {
+//   const player = (turn.setup) ? setupTracker.player : turn.player;
+//   return (player == space.piece.slice(0,8)) ? true : false;
+// }
 
 //Handle game logic during a Move phase
 function handleMove(space) {
@@ -452,7 +454,9 @@ function endTurn() {
 }
 //Manage game.
 function handleGame(space) {
-  if (turn.phase == "move1" || turn.phase == "move2") {
+  if (turn.setup) {
+    console.log(handleSetup(space));
+  } else if (turn.phase == "move1" || turn.phase == "move2") {
     console.log(handleMove(space));
   } else if (turn.phase == "push") {
     console.log(handlePush(space));
@@ -463,30 +467,47 @@ function handleGame(space) {
 //Setup phase functions.
 //Manage setup.
 function handleSetup(space){
-  if (!moveControl.piece) {
+  if (space.name == "doneButton") return resolveDone();
+  if (testReserve(space) && space.num < 1) return "No pieces left in that reserve.";
+  if (!moveControl.space) {
     if (!space.piece) return "Select a tile with one of your pieces.";
     if (!matchPiece(space)) return "You can only move your own pieces during setup.";
     highlightSquare(space);
     moveControl.space = space;
     return("handleSetup finished.")
-  } else {
-    return "something weird happened."
-  }
+  };
   if (space == moveControl.space) {
     updateSpace(space);
     moveControl.space = false;
     populateReserves();
-    return "Move cancelled."
-  }
+    return "Move cancelled.";
+  };
   if (!testLegalStartSquare(space)) return "Wrong half of board.";
-  if (space.piece) return "Cannot place on occupied space."
+  if (space.piece) return "Cannot place on occupied space.";
   if (testReserve(moveControl.space)) {
+    if (moveControl.space.num < 1) return "No pieces left in that reserve.";
+    const message = setupPiece(moveControl.space, space);
     moveControl.space = false;
-    return setupPiece(moveControl.space)
+    return message;
   } else {
     return move(moveControl.space, space);
   }
-
+  return "Something weird happened.";
+}
+//Handle click of done button during setup.
+function resolveDone(){
+  if (moveControl.space) return "Please finish your move or cancel it before ending your setup.";
+  const player = turn.player;
+  if (board[player + "SquareReserve"].num != 0) return "You must place all your pieces.";
+  if (board[player + "RoundReserve"].num != 0) return "You must place all your pieces.";
+  if (player == "player_1") {
+    changePlayer();
+    return "Player 2: Place your Pieces.";
+  } else {
+    turn.setup = false;
+    changePlayer();
+    return "Player 1: you move first.";
+  }
 
 }
 //Test whether a space is a reserve square.
@@ -497,7 +518,7 @@ function testReserve(space){
 //player_2 on the bottom.
 function testLegalStartSquare(space){
   let num = parseInt(space.name[1]);
-  if (setupTracker.player == "player_1"){
+  if (turn.player == "player_1"){
     return (num < 5) ? true: false;
   } else {
     return (num > 4) ? true: false;
@@ -509,9 +530,9 @@ function setupPiece(startSpace, targetSpace){
   drawAnyPiece(targetSpace, startSpace.piece);
   let piece = startSpace.piece.slice(8);
   piece = piece[0].toLowerCase() + piece.slice(1);
-  --setupTracker.pieces[piece];
+  --startSpace.num;
   populateReserves();
-  return "setupPiece complete."
+  return "setupPiece complete.";
 }
 
 //CODE BLOCK TO GENERATE A COMPLETE BOARD OBJECT.  CONSIDER REFACTOR?
@@ -608,13 +629,13 @@ They should probably be reorganized. */
 
 //adding a function to create 1-off special squares
 function addSpecialSquares(board){
-  const pushButton1 = {
+  const doneButton1 = {
     width: 60,
     height: 50,
     color: colors.dark,
     x: 295.5,
     y: 100.5,
-    name: "pushButton",
+    name: "doneButton",
     edges: [],
     piece: "",
     drawable: false,
@@ -623,7 +644,7 @@ function addSpecialSquares(board){
     endgame: false,
     hasAnchor: false
   }
-  board.pushButton = pushButton1;
+  board.doneButton = doneButton1;
   const moveButton = {
     width: 60,
     height: 50,
@@ -860,7 +881,7 @@ function startGame() {
   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
 
   //Add Special buttons (e.g. pushButton)
-  textBox(board.pushButton, "#FEFEFE", "Arial", 18, "PUSH");
+  textBox(board.doneButton, "#FEFEFE", "Arial", 18, "DONE");
   textBox(board.moveButton, "#FEFEFE", "Arial", 18, "MOVE");
   //Add setup regions and pieces to reserves.
   // makePieceReserve("player_1", "square", setupTracker.pieces.square);
@@ -869,15 +890,6 @@ function startGame() {
   // makePieceReserve("player_2", "round", setupTracker.pieces.round);
   addReserves();
   populateReserves();
-
-
-
-
-  //Add tests for pieces
-  drawAnyPiece(board["c4"], "player_1Square");
-  drawAnyPiece(board["d4"], "player_1Round");
-  drawAnyPiece(board["c5"], "player_2Square");
-  drawAnyPiece(board["d5"], "player_2Round");
 }
 
 
