@@ -349,6 +349,7 @@ let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false
 
 //Handle game logic during a Move phase
 function handleMove(space) {
+  if (space.name == "skipButton") return skip()
   if (!moveControl.space) {
     if (!matchPiece(space) || (!hasPiece(space))) return `Choose a tile with one of your pieces, ${turn.player}.`;
     highlightSquare(space);
@@ -369,6 +370,15 @@ function handleMove(space) {
       return message;
     }
   }
+}
+//Skip buttom advances turn to push phase.
+function skip(){
+  if (moveControl.space) {
+    update(moveControl.space);
+    moveControl.space = false;
+  }
+  turn.phase = "push";
+  return "Advancing turn to push phase."
 }
 
 //Handle game logic during a Push phase
@@ -613,13 +623,13 @@ function addSpecialSquares(board){
     hasAnchor: false
   }
   board.doneButton = doneButton1;
-  const moveButton = {
+  const skipButton = {
     width: 60,
     height: 50,
     color: colors.dark,
     x: 295.5,
     y: 180.5,
-    name: "moveButton",
+    name: "skipButton",
     edges: [],
     piece: "",
     drawable: false,
@@ -628,7 +638,7 @@ function addSpecialSquares(board){
     endgame: false,
     hasAnchor: false
   }
-  board.moveButton = moveButton;
+  board.skipButton = skipButton;
 }
 
 //simpler function that shaves down unnecessary makePieceReserve complexity.
@@ -794,7 +804,7 @@ function startGame() {
 
   //Add Special buttons (e.g. pushButton)
   textBox(board.doneButton, "#FEFEFE", "Arial", 18, "DONE");
-  textBox(board.moveButton, "#FEFEFE", "Arial", 18, "MOVE");
+  textBox(board.skipButton, "#FEFEFE", "Arial", 18, "SKIP");
   //Add setup regions and pieces to reserves.
   addReserves();
   populateReserves();
