@@ -26,37 +26,10 @@ var myGameArea = {
 
 //Game Controller Variables.
 const turn = {
+  setup: true,
   player: "player_1",
   phase: "move1",
 };
-
-//an object to manage setup phase
-const setupTracker = {
-  setup : true,
-  player : "player_1",
-  pieces : {
-    "round" : 2,
-    "square" : 3
-  }
-}
-setupTracker.allPlaced = function() {
-  return(this.pieces.round == 0 && this.pieces.round == 0) ? true : false;
-}
-setupTracker.placeRound = function() {
-  if (this.pieces.round > 0) this.pieces.round --;
-  return this.pieces.round
-}
-setupTracker.placeSquare = function() {
-  if (this.pieces.square > 0) this.pieces.square --;
-  return this.pieces.square
-}
-setupTracker.changePlayer = function() {
-  this.player = "player_2";
-}
-setupTracker.setupToggle = function() {
-  this.setup = (true) ? false : true;
-}
-
 
 /* Adding a control object for pushes.
 Right now, I'm returning strings for all outcomes of pushPiece, successful or not.
@@ -176,11 +149,13 @@ function drawCircle(radius, color, x, y){
 }
 
 //new clear function that takes a space instead of a name.
-function clear(space) {
+//Added optional variable to allow wiping of  a space without changing
+//space.piece for setup handling.
+function clear(space, removePiece = true) {
   const ctx = myGameArea.context;
   ctx.clearRect(space.x, space.y, space.width, space.height);
   makeBoardRegion(space.width, space.height, space.color, space.x, space.y);
-  space.piece = "";
+  if (removePiece) space.piece = "";
 }
 
 //draw a highlighted region around a selected square.
@@ -277,7 +252,8 @@ function updateSpace(space) {
 //FUNCTIONS TO MANIPULATE PIECES
 
 //Move a piece from one square to another.
-function move(startSpace, targetSpace) {
+//added removePiece option to pass to clear.
+function move(startSpace, targetSpace, removePiece = true) {
   if (targetSpace.piece || !targetSpace.placeable) {
     return "move failed.";
   }
@@ -285,7 +261,7 @@ function move(startSpace, targetSpace) {
     return "no piece on start tile.";
   }
   drawAnyPiece(targetSpace, startSpace.piece);
-  clear(startSpace);
+  clear(startSpace, removePiece);
   return "move complete.";
 }
 
@@ -369,10 +345,11 @@ function advanceTurn() {
 //Test whether a space is occupied
 let hasPiece = space => (space.piece) ? true: false;
 //Test whether a selected piece belongs to the current player
-let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false;
+let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false
 
 //Handle game logic during a Move phase
 function handleMove(space) {
+  if (space.name == "skipButton") return skip()
   if (!moveControl.space) {
     if (!matchPiece(space) || (!hasPiece(space))) return `Choose a tile with one of your pieces, ${turn.player}.`;
     highlightSquare(space);
@@ -393,6 +370,15 @@ function handleMove(space) {
       return message;
     }
   }
+}
+//Skip buttom advances turn to push phase.
+function skip(){
+  if (moveControl.space) {
+    update(moveControl.space);
+    moveControl.space = false;
+  }
+  turn.phase = "push";
+  return "Advancing turn to push phase."
 }
 
 //Handle game logic during a Push phase
@@ -446,7 +432,9 @@ function endTurn() {
 }
 //Manage game.
 function handleGame(space) {
-  if (turn.phase == "move1" || turn.phase == "move2") {
+  if (turn.setup) {
+    console.log(handleSetup(space));
+  } else if (turn.phase == "move1" || turn.phase == "move2") {
     console.log(handleMove(space));
   } else if (turn.phase == "push") {
     console.log(handlePush(space));
@@ -455,9 +443,74 @@ function handleGame(space) {
   }
 }
 //Setup phase functions.
-//Place light pieces
-function setupPiece(player, Space){
+//Manage setup.
+function handleSetup(space){
+  if (space.name == "doneButton") return resolveDone();
+  if (testReserve(space) && space.num < 1) return "No pieces left in that reserve.";
+  if (!moveControl.space) {
+    if (!space.piece) return "Select a tile with one of your pieces.";
+    if (!matchPiece(space)) return "You can only move your own pieces during setup.";
+    highlightSquare(space);
+    moveControl.space = space;
+    return("handleSetup finished.")
+  };
+  if (space == moveControl.space) {
+    updateSpace(space);
+    moveControl.space = false;
+    populateReserves();
+    return "Move cancelled.";
+  };
+  if (!testLegalStartSquare(space)) return "Wrong half of board.";
+  if (space.piece) return "Cannot place on occupied space.";
+  if (testReserve(moveControl.space)) {
+    if (moveControl.space.num < 1) return "No pieces left in that reserve.";
+    const message = setupPiece(moveControl.space, space);
+    moveControl.space = false;
+    return message;
+  } else {
+    return move(moveControl.space, space);
+  }
+  return "Something weird happened.";
+}
+//Handle click of done button during setup.
+function resolveDone(){
+  if (moveControl.space) return "Please finish your move or cancel it before ending your setup.";
+  const player = turn.player;
+  if (board[player + "SquareReserve"].num != 0) return "You must place all your pieces.";
+  if (board[player + "RoundReserve"].num != 0) return "You must place all your pieces.";
+  if (player == "player_1") {
+    changePlayer();
+    return "Player 2: Place your Pieces.";
+  } else {
+    turn.setup = false;
+    changePlayer();
+    return "Player 1: you move first.";
+  }
 
+}
+//Test whether a space is a reserve square.
+function testReserve(space){
+  return (space.name.slice(-7) == "Reserve") ? true : false;
+}
+//Ensure that player_1 only places pieces on the top half of the board,
+//player_2 on the bottom.
+function testLegalStartSquare(space){
+  let num = parseInt(space.name[1]);
+  if (turn.player == "player_1"){
+    return (num < 5) ? true: false;
+  } else {
+    return (num > 4) ? true: false;
+  }
+}
+//Move piece from reserve to space; all error handling to be done in handleSetup.
+//TODO: Consider moving to piece manipulation section.
+function setupPiece(startSpace, targetSpace){
+  drawAnyPiece(targetSpace, startSpace.piece);
+  let piece = startSpace.piece.slice(8);
+  piece = piece[0].toLowerCase() + piece.slice(1);
+  --startSpace.num;
+  populateReserves();
+  return "setupPiece complete.";
 }
 
 //CODE BLOCK TO GENERATE A COMPLETE BOARD OBJECT.  CONSIDER REFACTOR?
@@ -549,15 +602,18 @@ function standardBoard(){
   return board;
 }
 
+/* TODO: The following functions are used for initial board setup.
+They should probably be reorganized. */
+
 //adding a function to create 1-off special squares
 function addSpecialSquares(board){
-  const pushButton1 = {
+  const doneButton1 = {
     width: 60,
     height: 50,
     color: colors.dark,
     x: 295.5,
     y: 100.5,
-    name: "pushButton",
+    name: "doneButton",
     edges: [],
     piece: "",
     drawable: false,
@@ -566,14 +622,14 @@ function addSpecialSquares(board){
     endgame: false,
     hasAnchor: false
   }
-  board.pushButton = pushButton1;
-  const moveButton = {
+  board.doneButton = doneButton1;
+  const skipButton = {
     width: 60,
     height: 50,
     color: colors.dark,
     x: 295.5,
     y: 180.5,
-    name: "moveButton",
+    name: "skipButton",
     edges: [],
     piece: "",
     drawable: false,
@@ -582,58 +638,126 @@ function addSpecialSquares(board){
     endgame: false,
     hasAnchor: false
   }
-  board.moveButton = moveButton;
+  board.skipButton = skipButton;
 }
-//
-function makePieceReserve(player, piece, number){
-  try {
-    let name = `${player} ${piece}`;
-    console.log("try name:", name);
-    if (!board[name]) throw new Error("must generate reserve regions.");
-  } catch(error){
-    console.log(error);
-    //generate reserve spaces if none exist. Refactor?
-    let space = {};
-    space.width = 100;
-    space.height = 50;
-    space.color = colors.lessLight;
-    space.x = 25.5;
-    space.y = 25.5;
-    space.name = "player_1 square";
-    space.piece = "square";
-    space.drawable = true;
-    board[space.name] = space;
 
-    let space2 = {}
-    Object.entries(space).forEach(([key, value]) => space2[key] = value)
-    space2.x += 150;
-    space2.name = "player_1 round";
-    space2.piece = "round";
-    board[space2.name] = space2;
+//simpler function that shaves down unnecessary makePieceReserve complexity.
+//Generate reserve spaces in the board object.  Drawn with populateReserves().
+function addReserves(){
+  let space = {};
+  space.width = 150;
+  space.height = 50;
+  space.color = colors.lessLight;
+  space.x = 25.5;
+  space.y = 25.5;
+  space.piece = "player_1Square";
+  space.name = space.piece + "Reserve";
+  space.drawable = true;
+  space.num = 3;
+  board[space.name] = space;
 
-    let space3 = {}
-    Object.entries(space2).forEach(([key, value]) => space3[key] = value)
-    space3.y += 500;
-    space3.name = "player_2 round";
-    board[space3.name] = space3;
+  let space2 = {}
+  Object.entries(space).forEach(([key, value]) => space2[key] = value)
+  space2.x += 200;
+  space2.piece = "player_1Round";
+  space2.name = space2.piece + "Reserve";
+  space2.num = 2;
+  board[space2.name] = space2;
 
-    let space4 = {}
-    Object.entries(space3).forEach(([key, value]) => space4[key] = value)
-    space4.x -= 150;
-    space4.name = "player_2 square";
-    space4.piece = "square";
-    board[space4.name] = space4;
+  let space3 = {}
+  Object.entries(space2).forEach(([key, value]) => space3[key] = value)
+  space3.y += 500;
+  space3.piece = "player_2Round";
+  space3.name = space3.piece + "Reserve";
+  space3.num = 2;
+  board[space3.name] = space3;
 
-    console.log("reserves generated.");
-  } finally {
-    let drawSpace = board[`${player} ${piece}`];
-    console.log(`${player} ${piece}`);
-    console.log(drawSpace);
-    makeBoardRegion(drawSpace.width, drawSpace.height, drawSpace.color, drawSpace.x, drawSpace.y);
+  let space4 = {}
+  Object.entries(space3).forEach(([key, value]) => space4[key] = value)
+  space4.x -= 200;
+  space4.piece = "player_2Square";
+  space4.name = space4.piece + "Reserve";
+  space4.num = 3;
+  board[space4.name] = space4;
 
+  console.log("reserve squares generated.");
+  console.log(board[space4.name]);
+}
+
+/* Add Pieces to setup boxes. - Plan is to run on initial draw and after every piece is first placed.
+TODO: Reorganize these functions in the file.  PopulateReserves is really a setup handler helper function.
+the drawing functions should go with the other drawing functions, I imagine.
+TODO: Maybe refactor other functions to use addSquare and addCircle...Hide obnoxious
+component and strokeRect pattern.  */
+
+function populateReserves(){
+  for (let i = 1; i < 3; i++){
+    let player = "player_" + i;
+    let square1 = board[player + "SquareReserve"];
+    let square2 = board[player + "RoundReserve"];
+    generateSquares(square1, player, square1.num);
+    generateCircles(square2, player, square2.num);
+  }
+}
+//Draw a square on a region.  Centers on 50px / 50px box by default.
+//Options will take x, y to give specific offset.
+function addSquare(offsetObj, color, options = {}) {
+  let {width, height, x, y} = offsetObj;
+  if (options == {}) {
+    component(30, 30, color, space.x + 10, space.y + 10);
+    myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
+  }  else {
+    let {width, height, x, y} = options;
+    component(width, height, color, x, y);
+    myGameArea.context.strokeRect(x, y, width, height);
   }
 }
 
+//Draw a circle on a region.  Centers on box by default.
+//Options will take x, y, radius to give specific offset.
+function addCircle(offsetObj, color, options = {}) {
+  let {width, height, x, y} = offsetObj;
+  if (options == {}) {
+    drawCircle(15, color, x + (width / 2), y + (height / 2));
+  } else {
+    let {radius, x, y} = options;
+    drawCircle(radius, color, x, y);
+  }
+}
+
+//generate a number of standard squares in a row.
+//Added an option to first clear the region (without removing region.piece).
+function generateSquares(offsetObj, player, number, redraw = true) {
+  if (redraw) {
+    clear(offsetObj, false);
+  }
+  let {x, y} = offsetObj;
+  for (var i = 0; i < number; i++) {
+    let options = {}
+    options.height = 30;
+    options.width = 30;
+    options.color = (player == "player_1") ? colors.light : colors.dark;
+    options.x = x + 10 + (options.width + 10) * i;
+    options.y = y + 10;
+    addSquare(offsetObj, options.color, options);
+  }
+}
+
+//generate a number of standard circles in a row
+function generateCircles(offsetObj, player, number, redraw = true){
+  if (redraw) {
+    clear(offsetObj, false);
+  }
+  let {x, y} = offsetObj;
+  for (var i = 0; i < number; i++) {
+    let options = {}
+    options.radius = 15;
+    options.color = (player == "player_1") ? colors.light : colors.dark;
+    options.x = x + 10 + options.radius + (options.radius * 2 + 10) * i;
+    options.y = y + 10 + options.radius;
+    addCircle(offsetObj, options.color, options);
+  }
+}
 //writing a single function to add up, down, left, and right properties to squares.
 function addSides(square){
   let column = square.name[0];;
@@ -679,22 +803,11 @@ function startGame() {
   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
 
   //Add Special buttons (e.g. pushButton)
-  textBox(board.pushButton, "#FEFEFE", "Arial", 18, "PUSH");
-  textBox(board.moveButton, "#FEFEFE", "Arial", 18, "MOVE");
-  //Add setup regions
-  makePieceReserve("player_1", "square", setupTracker.pieces.square);
-  makePieceReserve("player_2", "square", setupTracker.pieces.square);
-  makePieceReserve("player_1", "round", setupTracker.pieces.round);
-  makePieceReserve("player_2", "round", setupTracker.pieces.round);
-
-
-
-
-  //Add tests for pieces
-  drawAnyPiece(board["c4"], "player_1Square");
-  drawAnyPiece(board["d4"], "player_1Round");
-  drawAnyPiece(board["c5"], "player_2Square");
-  drawAnyPiece(board["d5"], "player_2Round");
+  textBox(board.doneButton, "#FEFEFE", "Arial", 18, "DONE");
+  textBox(board.skipButton, "#FEFEFE", "Arial", 18, "SKIP");
+  //Add setup regions and pieces to reserves.
+  addReserves();
+  populateReserves();
 }
 
 
