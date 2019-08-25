@@ -279,7 +279,8 @@ function updateSpace(space) {
 //FUNCTIONS TO MANIPULATE PIECES
 
 //Move a piece from one square to another.
-function move(startSpace, targetSpace) {
+//added removePiece option to pass to clear.
+function move(startSpace, targetSpace, removePiece = true) {
   if (targetSpace.piece || !targetSpace.placeable) {
     return "move failed.";
   }
@@ -287,7 +288,7 @@ function move(startSpace, targetSpace) {
     return "no piece on start tile.";
   }
   drawAnyPiece(targetSpace, startSpace.piece);
-  clear(startSpace);
+  clear(startSpace, removePiece);
   return "move complete.";
 }
 
@@ -373,7 +374,7 @@ let hasPiece = space => (space.piece) ? true: false;
 //Test whether a selected piece belongs to the current player
 function matchPiece(space) {
   const player = (setupTracker.setup) ? setupTracker.player : turn.player;
-  return (player == space.piece.slice(0,8)) ? true : false;  
+  return (player == space.piece.slice(0,8)) ? true : false;
 }
 
 //Handle game logic during a Move phase
@@ -460,18 +461,57 @@ function handleGame(space) {
   }
 }
 //Setup phase functions.
-//Controller function for setup
+//Manage setup.
 function handleSetup(space){
+  if (!moveControl.piece) {
+    if (!space.piece) return "Select a tile with one of your pieces.";
+    if (!matchPiece(space)) return "You can only move your own pieces during setup.";
+    highlightSquare(space);
+    moveControl.space = space;
+    return("handleSetup finished.")
+  } else {
+    return "something weird happened."
+  }
+  if (space == moveControl.space) {
+    updateSpace(space);
+    moveControl.space = false;
+    populateReserves();
+    return "Move cancelled."
+  }
+  if (!testLegalStartSquare(space)) return "Wrong half of board.";
+  if (space.piece) return "Cannot place on occupied space."
+  if (testReserve(moveControl.space)) {
+    moveControl.space = false;
+    return setupPiece(moveControl.space)
+  } else {
+    return move(moveControl.space, space);
+  }
+
 
 }
+//Test whether a space is a reserve square.
+function testReserve(space){
+  return (space.name.slice(-7) == "Reserve") ? true : false;
+}
+//Ensure that player_1 only places pieces on the top half of the board,
+//player_2 on the bottom.
+function testLegalStartSquare(space){
+  let num = parseInt(space.name[1]);
+  if (setupTracker.player == "player_1"){
+    return (num < 5) ? true: false;
+  } else {
+    return (num > 4) ? true: false;
+  }
+}
 //Move piece from reserve to space; all error handling to be done in handleSetup.
+//TODO: Consider moving to piece manipulation section.
 function setupPiece(startSpace, targetSpace){
   drawAnyPiece(targetSpace, startSpace.piece);
   let piece = startSpace.piece.slice(8);
   piece = piece[0].toLowerCase() + piece.slice(1);
   --setupTracker.pieces[piece];
   populateReserves();
-
+  return "setupPiece complete."
 }
 
 //CODE BLOCK TO GENERATE A COMPLETE BOARD OBJECT.  CONSIDER REFACTOR?
@@ -602,56 +642,103 @@ function addSpecialSquares(board){
   board.moveButton = moveButton;
 }
 //Generate setup piece reserve boxes and draw them.
-function makePieceReserve(player, piece, number){
-  try {
-    let name = player + piece[0].toUpperCase() + piece.slice(1) + "Reserve";
-    console.log("try name:", name);
-    if (!board[name]) throw new Error("must generate reserve regions.");
-  } catch(error){
-    console.log(error);
-    //generate reserve spaces if none exist. Refactor?
-    let space = {};
-    space.width = 150;
-    space.height = 50;
-    space.color = colors.lessLight;
-    space.x = 25.5;
-    space.y = 25.5;
-    space.piece = "player_1Square";
-    space.name = space.piece + "Reserve";
-    space.drawable = true;
-    board[space.name] = space;
+// function makePieceReserve(player, piece, number){
+//   try {
+//     let name = player + piece[0].toUpperCase() + piece.slice(1) + "Reserve";
+//     console.log("try name:", name);
+//     if (!board[name]) throw new Error("must generate reserve regions.");
+//   } catch(error){
+//     console.log(error);
+//     //generate reserve spaces if none exist. Refactor?
+//     let space = {};
+//     space.width = 150;
+//     space.height = 50;
+//     space.color = colors.lessLight;
+//     space.x = 25.5;
+//     space.y = 25.5;
+//     space.piece = "player_1Square";
+//     space.name = space.piece + "Reserve";
+//     space.drawable = true;
+//     space.num = 3;
+//     board[space.name] = space;
+//
+//     let space2 = {}
+//     Object.entries(space).forEach(([key, value]) => space2[key] = value)
+//     space2.x += 200;
+//     space2.piece = "player_1Round";
+//     space2.name = space2.piece + "Reserve";
+//     space2.num = 2;
+//     board[space2.name] = space2;
+//
+//     let space3 = {}
+//     Object.entries(space2).forEach(([key, value]) => space3[key] = value)
+//     space3.y += 500;
+//     space3.piece = "player_2Round";
+//     space3.name = space3.piece + "Reserve";
+//     space3.num = 2;
+//     board[space3.name] = space3;
+//
+//     let space4 = {}
+//     Object.entries(space3).forEach(([key, value]) => space4[key] = value)
+//     space4.x -= 200;
+//     space4.piece = "player_2Square";
+//     space4.name = space4.piece + "Reserve";
+//     space4.num = 3;
+//     board[space4.name] = space4;
+//
+//     console.log("reserve squares generated.");
+//     console.log(board[space4.name]);
+//   } finally {
+//     let name = player + piece[0].toUpperCase() + piece.slice(1) + "Reserve";
+//     let drawSpace = board[name];
+//     console.log(name);
+//     console.log(drawSpace);
+//     makeBoardRegion(drawSpace.width, drawSpace.height, drawSpace.color, drawSpace.x, drawSpace.y);
+//
+//   }
+// }
 
-    let space2 = {}
-    Object.entries(space).forEach(([key, value]) => space2[key] = value)
-    space2.x += 200;
-    space2.piece = "player_1Round";
-    space2.name = space2.piece + "Reserve";
-    board[space2.name] = space2;
+//simpler function that shaves down unnecessary makePieceReserve complexity.
+//Generate reserve spaces in the board object.  Drawn with populateReserves().
+function addReserves(){
+  let space = {};
+  space.width = 150;
+  space.height = 50;
+  space.color = colors.lessLight;
+  space.x = 25.5;
+  space.y = 25.5;
+  space.piece = "player_1Square";
+  space.name = space.piece + "Reserve";
+  space.drawable = true;
+  space.num = 3;
+  board[space.name] = space;
 
-    let space3 = {}
-    Object.entries(space2).forEach(([key, value]) => space3[key] = value)
-    space3.y += 500;
-    space3.piece = "player_2Round";
-    space3.name = space3.piece + "Reserve";
-    board[space3.name] = space3;
+  let space2 = {}
+  Object.entries(space).forEach(([key, value]) => space2[key] = value)
+  space2.x += 200;
+  space2.piece = "player_1Round";
+  space2.name = space2.piece + "Reserve";
+  space2.num = 2;
+  board[space2.name] = space2;
 
-    let space4 = {}
-    Object.entries(space3).forEach(([key, value]) => space4[key] = value)
-    space4.x -= 200;
-    space4.piece = "player_2Square";
-    space4.name = space4.piece + "Reserve";
-    board[space4.name] = space4;
+  let space3 = {}
+  Object.entries(space2).forEach(([key, value]) => space3[key] = value)
+  space3.y += 500;
+  space3.piece = "player_2Round";
+  space3.name = space3.piece + "Reserve";
+  space3.num = 2;
+  board[space3.name] = space3;
 
-    console.log("reserve squares generated.");
-    console.log(board[space4.name]);
-  } finally {
-    let name = player + piece[0].toUpperCase() + piece.slice(1) + "Reserve";
-    let drawSpace = board[name];
-    console.log(name);
-    console.log(drawSpace);
-    makeBoardRegion(drawSpace.width, drawSpace.height, drawSpace.color, drawSpace.x, drawSpace.y);
+  let space4 = {}
+  Object.entries(space3).forEach(([key, value]) => space4[key] = value)
+  space4.x -= 200;
+  space4.piece = "player_2Square";
+  space4.name = space4.piece + "Reserve";
+  space4.num = 3;
+  board[space4.name] = space4;
 
-  }
+  console.log("reserve squares generated.");
+  console.log(board[space4.name]);
 }
 
 /* Add Pieces to setup boxes. - Plan is to run on initial draw and after every piece is first placed.
@@ -661,19 +748,13 @@ TODO: Maybe refactor other functions to use addSquare and addCircle...Hide obnox
 component and strokeRect pattern.  */
 
 function populateReserves(){
-  if (setupTracker.player == "player_1") {
-    generateSquares(board["player_1SquareReserve"], "player_1", setupTracker.pieces.square);
-    generateCircles(board["player_1RoundReserve"], "player_1", setupTracker.pieces.round);
-    generateSquares(board["player_2SquareReserve"], "player_2", 3);
-    generateCircles(board["player_2RoundReserve"], "player_2", 2);
-  } else {
-    generateSquares(board["player_1SquareReserve"], "player_1", 0);
-    generateCircles(board["player_1RoundReserve"], "player_1", 0);
-    generateSquares(board["player_2SquareReserve"], "player_2", setupTracker.pieces.square);
-    generateCircles(board["player_2RoundReserve"], "player_2", setupTracker.pieces.round);
+  for (let i = 1; i < 3; i++){
+    let player = "player_" + i;
+    let square1 = board[player + "SquareReserve"];
+    let square2 = board[player + "RoundReserve"];
+    generateSquares(square1, player, square1.num);
+    generateCircles(square2, player, square2.num);
   }
-
-
 }
 //Draw a square on a region.  Centers on 50px / 50px box by default.
 //Options will take x, y to give specific offset.
@@ -782,10 +863,11 @@ function startGame() {
   textBox(board.pushButton, "#FEFEFE", "Arial", 18, "PUSH");
   textBox(board.moveButton, "#FEFEFE", "Arial", 18, "MOVE");
   //Add setup regions and pieces to reserves.
-  makePieceReserve("player_1", "square", setupTracker.pieces.square);
-  makePieceReserve("player_2", "square", setupTracker.pieces.square);
-  makePieceReserve("player_1", "round", setupTracker.pieces.round);
-  makePieceReserve("player_2", "round", setupTracker.pieces.round);
+  // makePieceReserve("player_1", "square", setupTracker.pieces.square);
+  // makePieceReserve("player_2", "square", setupTracker.pieces.square);
+  // makePieceReserve("player_1", "round", setupTracker.pieces.round);
+  // makePieceReserve("player_2", "round", setupTracker.pieces.round);
+  addReserves();
   populateReserves();
 
 
