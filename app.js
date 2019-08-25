@@ -31,34 +31,6 @@ const turn = {
   phase: "move1",
 };
 
-//an object to manage setup phase
-const setupTracker = {
-  setup : true,
-  player : "player_1",
-  pieces : {
-    "round" : 2,
-    "square" : 3
-  }
-}
-setupTracker.allPlaced = function() {
-  return(this.pieces.round == 0 && this.pieces.round == 0) ? true : false;
-}
-setupTracker.placeRound = function() {
-  if (this.pieces.round > 0) this.pieces.round --;
-  return this.pieces.round
-}
-setupTracker.placeSquare = function() {
-  if (this.pieces.square > 0) this.pieces.square --;
-  return this.pieces.square
-}
-setupTracker.changePlayer = function() {
-  this.player = "player_2";
-}
-setupTracker.setupToggle = function() {
-  this.setup = (true) ? false : true;
-}
-
-
 /* Adding a control object for pushes.
 Right now, I'm returning strings for all outcomes of pushPiece, successful or not.
 This is mostly for error handling, so I can see what's wrong.  It also might be
@@ -374,10 +346,6 @@ function advanceTurn() {
 let hasPiece = space => (space.piece) ? true: false;
 //Test whether a selected piece belongs to the current player
 let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false
-// function matchPiece(space) {
-//   const player = (turn.setup) ? setupTracker.player : turn.player;
-//   return (player == space.piece.slice(0,8)) ? true : false;
-// }
 
 //Handle game logic during a Move phase
 function handleMove(space) {
@@ -662,62 +630,6 @@ function addSpecialSquares(board){
   }
   board.moveButton = moveButton;
 }
-//Generate setup piece reserve boxes and draw them.
-// function makePieceReserve(player, piece, number){
-//   try {
-//     let name = player + piece[0].toUpperCase() + piece.slice(1) + "Reserve";
-//     console.log("try name:", name);
-//     if (!board[name]) throw new Error("must generate reserve regions.");
-//   } catch(error){
-//     console.log(error);
-//     //generate reserve spaces if none exist. Refactor?
-//     let space = {};
-//     space.width = 150;
-//     space.height = 50;
-//     space.color = colors.lessLight;
-//     space.x = 25.5;
-//     space.y = 25.5;
-//     space.piece = "player_1Square";
-//     space.name = space.piece + "Reserve";
-//     space.drawable = true;
-//     space.num = 3;
-//     board[space.name] = space;
-//
-//     let space2 = {}
-//     Object.entries(space).forEach(([key, value]) => space2[key] = value)
-//     space2.x += 200;
-//     space2.piece = "player_1Round";
-//     space2.name = space2.piece + "Reserve";
-//     space2.num = 2;
-//     board[space2.name] = space2;
-//
-//     let space3 = {}
-//     Object.entries(space2).forEach(([key, value]) => space3[key] = value)
-//     space3.y += 500;
-//     space3.piece = "player_2Round";
-//     space3.name = space3.piece + "Reserve";
-//     space3.num = 2;
-//     board[space3.name] = space3;
-//
-//     let space4 = {}
-//     Object.entries(space3).forEach(([key, value]) => space4[key] = value)
-//     space4.x -= 200;
-//     space4.piece = "player_2Square";
-//     space4.name = space4.piece + "Reserve";
-//     space4.num = 3;
-//     board[space4.name] = space4;
-//
-//     console.log("reserve squares generated.");
-//     console.log(board[space4.name]);
-//   } finally {
-//     let name = player + piece[0].toUpperCase() + piece.slice(1) + "Reserve";
-//     let drawSpace = board[name];
-//     console.log(name);
-//     console.log(drawSpace);
-//     makeBoardRegion(drawSpace.width, drawSpace.height, drawSpace.color, drawSpace.x, drawSpace.y);
-//
-//   }
-// }
 
 //simpler function that shaves down unnecessary makePieceReserve complexity.
 //Generate reserve spaces in the board object.  Drawn with populateReserves().
@@ -884,10 +796,6 @@ function startGame() {
   textBox(board.doneButton, "#FEFEFE", "Arial", 18, "DONE");
   textBox(board.moveButton, "#FEFEFE", "Arial", 18, "MOVE");
   //Add setup regions and pieces to reserves.
-  // makePieceReserve("player_1", "square", setupTracker.pieces.square);
-  // makePieceReserve("player_2", "square", setupTracker.pieces.square);
-  // makePieceReserve("player_1", "round", setupTracker.pieces.round);
-  // makePieceReserve("player_2", "round", setupTracker.pieces.round);
   addReserves();
   populateReserves();
 }
