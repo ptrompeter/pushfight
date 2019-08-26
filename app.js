@@ -43,12 +43,11 @@ const pushControl = {};
 pushControl.space = false;
 pushControl.targets = {}
 pushControl.directions = ["up", "down", "left", "right"]
-pushControl.trueStrings = ['push_ok', ['endgame'], ['player_2 win'], ['player_1 win']]
+pushControl.trueStrings = ["push_ok", "endgame", "player_2 win", "player_1 win"]
 
 //Test pushing in each direction from selected space; set pushControl.targets[direction]
 //property of square that can be legally pushed.
 pushControl.testPush = function() {
-  let trueStrings = ['push_ok', ['endgame'], ['player_2 win'], ['player_1 win']]
   if (!pushControl.space) return "pushControl.space has not been set";
   this.directions.forEach(function(direction){
     pushControl.targets[direction] = firstPush(pushControl.space, direction, true);
@@ -339,14 +338,46 @@ function advanceTurn() {
     changePlayer();
   } else {
     turn.phase = phaseArray[phaseArray.indexOf(turn.phase) + 1];
+    if (turn.phase == "push"){
+      if (!checkNoLegalPush()){
+        console.log(`No legal pushes! ${turn.player} loses!`)
+        // changePlayer();
+        // const message = `No legal pushes! ${turn.player} Wins!`
+        // handleEndGame(turn.player, message);
+      }
+    pushControl.reset();
+    }
   }
+}
+
+//Check for no legal pushes win condition - to be called at the end of
+//advance turn to not require a click.
+function checkNoLegalPush() {
+  const squaresArray = [];
+  if (turn.phase == "push") {
+    let player = turn.player;
+    Object.values(board).forEach(function(value){
+      if (value.piece == player + "Square") squaresArray.push(value);
+    });
+    squaresArray.forEach(function(value) {
+      pushControl.space = value;
+      pushControl.testPush;
+      Object.values(pushControl.targets).forEach(function(value){
+      if (value != false) return true;
+      });
+    });
+  }
+
 }
 
 //Test whether a space is occupied
 let hasPiece = space => (space.piece) ? true: false;
 //Test whether a selected piece belongs to the current player
 let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false
+//Handle end game condition.
+function handleEndGame(winner, message) {
 
+}
 //Handle game logic during a Move phase
 function handleMove(space) {
   if (space.name == "skipButton") return skip()
@@ -377,7 +408,9 @@ function skip(){
     update(moveControl.space);
     moveControl.space = false;
   }
-  turn.phase = "push";
+  while (turn.phase != "push"){
+    advanceTurn();
+  }
   return "Advancing turn to push phase."
 }
 
@@ -405,7 +438,7 @@ function handlePush(space) {
     return "Push cancelled."
     //Handle push attempt.
   } else {
-    let direction = Object.keys(pushControl.targets).find(key => pushControl.targets[key] === space);
+    let direction = Object.keys(pushControl.targets).find(key => pushControl.targets[key] == space);
     let message = firstPush(pushControl.space, direction);
     //Cleanup commands to run on execution of legal push.
     if (pushControl.trueStrings.includes(message)) {
