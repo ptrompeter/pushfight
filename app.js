@@ -380,7 +380,7 @@ function handleEndGame(winner, message) {
 }
 //Handle game logic during a Move phase
 function handleMove(space) {
-  if (space.name == "skipButton") return skip()
+  if (space.name == "skipButton") return skip();
   if (!moveControl.space) {
     if (!matchPiece(space) || (!hasPiece(space))) return `Choose a tile with one of your pieces, ${turn.player}.`;
     highlightSquare(space);
@@ -392,14 +392,20 @@ function handleMove(space) {
     return "Move cancelled."
   } else {
     if (hasPiece(space)) return "You cannot move onto an occupied space.";
-    let message = move(moveControl.space, space);
-    if (message == "move complete.") {
-      advanceTurn();
-      moveControl.space = ""
-      return message;
+    testArray = [];
+    if (testEmptyPath(moveControl.space, space)) {
+      let message = move(moveControl.space, space);
+      if (message == "move complete.") {
+        advanceTurn();
+        moveControl.space = ""
+        return message;
+      } else {
+        return message;
+      }
     } else {
-      return message;
+      return "You can only move pieces along empty paths."
     }
+
   }
 }
 //Skip buttom advances turn to push phase.
@@ -419,11 +425,11 @@ function skip(){
 let testArray = [];
 function testEmptyPath(startSpace, endSpace) {
   testArray.push(startSpace);
-  console.log("start = end?", startSpace == endSpace);
+  // console.log("start = end?", startSpace == endSpace);
   if (startSpace == endSpace) return true;
   let directions = ["up", "down", "left", "right"];
   let message = false;
-  for (var i = 0; i < directions.length; i++){
+  for (var i = 0; i < directions.length; i++) {
     let direction = directions[i];
     let target = startSpace[direction];
     if (target && !testArray.includes(target) &&
@@ -433,7 +439,6 @@ function testEmptyPath(startSpace, endSpace) {
     if (message) break;
 
   };
-  testArray = [];
   return message;
 }
 
