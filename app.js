@@ -414,6 +414,33 @@ function skip(){
   return "Advancing turn to push phase."
 }
 
+//Test whether two spaces are connected by empty spaces.
+//TODO: This is a hacky guess-and-check traversal.  Make it better.
+let testArray = [];
+function testEmptyPath(startSpace, endSpace) {
+  testArray.push(startSpace);
+  console.log("start = end?", startSpace == endSpace);
+  if (startSpace == endSpace) return true;
+  let directions = ["up", "down", "left", "right"];
+  let message = false;
+  for (var i = 0; i < directions.length; i++){
+    let direction = directions[i];
+    let target = startSpace[direction];
+    if (target && !testArray.includes(target) &&
+        !target.piece && target.placeable) {
+      message = testEmptyPath(target, endSpace);
+    }
+    if (message) break;
+
+  };
+  testArray = [];
+  return message;
+}
+
+function alternateEmptyPath(startSpace, endSpace){
+
+}
+
 //Handle game logic during a Push phase
 function handlePush(space) {
   //Handle selection of piece to be pushed
