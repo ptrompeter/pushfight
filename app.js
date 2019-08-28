@@ -248,6 +248,18 @@ function updateSpace(space) {
   drawAnyPiece(space, space.piece);
 }
 
+//Draw wider center line between row 4 and 5.  Probably redraw it all the time.
+function drawCenterLine() {
+  const ctx = myGameArea.context;
+  const defaultLineWidth = ctx.lineWidth;
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(50, 300);
+  ctx.lineTo(250, 300);
+  ctx.stroke();
+  ctx.lineWidth = defaultLineWidth;
+}
+
 //FUNCTIONS TO MANIPULATE PIECES
 
 //Move a piece from one square to another.
