@@ -353,7 +353,9 @@ function advanceTurn() {
   } else {
     turn.phase = phaseArray[phaseArray.indexOf(turn.phase) + 1];
     if (turn.phase == "push"){
-      if (!checkNoLegalPush()){
+      const legalMove = checkNoLegalPush();
+      console.log('Is there a legal move?', legalMove);
+      if (!legalMove){
         console.log(`No legal pushes! ${turn.player} loses!`)
         // changePlayer();
         // const message = `No legal pushes! ${turn.player} Wins!`
@@ -371,16 +373,22 @@ function checkNoLegalPush() {
   const squaresArray = [];
   if (turn.phase == "push") {
     let player = turn.player;
+    let legalPush = false;
     Object.values(board).forEach(function(value){
       if (value.piece == player + "Square") squaresArray.push(value);
     });
+    console.log("squaresArray:", squaresArray);
     squaresArray.forEach(function(value) {
       pushControl.space = value;
-      pushControl.testPush;
+      pushControl.testPush();
+      console.log("targets?", pushControl.targets);
       Object.values(pushControl.targets).forEach(function(value){
-      if (value != false) return true;
+        console.log("value?", value);
+        if (value != false) legalPush = true;
       });
     });
+    console.log("legalPush?", legalPush);
+    return legalPush;
   }
 
 }
@@ -865,6 +873,21 @@ function addSidesToBoard(board){
   Object.values(board).forEach((square) => addSides(square));
 }
 
+//generates a Sample board for testing.
+function makeTestBoard(board){
+  drawAnyPiece(board.c3, "player_1Square");
+  drawAnyPiece(board.b4, "player_1Square");
+  drawAnyPiece(board.c4, "player_1Round");
+  drawAnyPiece(board.d4, "player_1Round");
+  drawAnyPiece(board.e4, "player_1Square");
+  drawAnyPiece(board.b5, "player_2Square");
+  drawAnyPiece(board.c5, "player_2Round");
+  drawAnyPiece(board.d5, "player_2Round");
+  drawAnyPiece(board.d6, "player_2Square");
+  drawAnyPiece(board.e5, "player_2Square");
+  turn.setup = false;
+}
+
 
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
 function startGame() {
@@ -918,15 +941,8 @@ canvas.addEventListener('click', (e) => {
     };
   }
   if (!space) console.log("outside clickable region");
-  if (space.name == "pushButton") {
-    console.log("name: ", name);
-    console.log("board[name]: ", board[name]);
-    console.log("board[name].x: ", board[name].x);
-
-    highlightSquare(board.pushButton);
-  }
-  console.log("space: ", space);
   if (space) {
+    console.log("space: ", space);
     console.log("starting handleGame");
     handleGame(space);
     } else {
