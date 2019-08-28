@@ -124,6 +124,7 @@ function makeBoardRegion(width, height, color, x, y) {
   const ctx = myGameArea.context;
   component(width, height, color, x, y);
   ctx.strokeRect(x, y, width, height);
+  drawCenterLine();
 }
 
 //this function draws filled rectangles.
@@ -219,6 +220,7 @@ function drawAnyPiece(space, piece = ""){
     clear(space);
   }
   space.piece = piece;
+  drawCenterLine();
 }
 
 //draw a red highlight around a piece to indicate anchor.
@@ -364,6 +366,7 @@ function advanceTurn() {
 
 //Check for no legal pushes win condition - to be called at the end of
 //advance turn to not require a click.
+//TODO: This function is buggy.  Getting false losses.
 function checkNoLegalPush() {
   const squaresArray = [];
   if (turn.phase == "push") {
