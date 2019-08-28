@@ -29,6 +29,7 @@ const turn = {
   setup: true,
   player: "player_1",
   phase: "move1",
+  winner: false
 };
 
 /* Adding a control object for pushes.
@@ -170,7 +171,7 @@ function highlightSquare(space){
 }
 
 //draw a filled box with text.
-function textBox(box, textColor, font, fontsize, text, outline = true, textborder = false) {
+function textBox(box, textColor, font, fontsize, textArray, outline = true, textborder = false) {
   const {width, height, color, x, y} = box;
   const ctx = myGameArea.context;
   (outline) ? makeBoardRegion(width, height, color, x, y) : component(width, height, color, x, y);
@@ -179,8 +180,11 @@ function textBox(box, textColor, font, fontsize, text, outline = true, textborde
   ctx.font = String(fontsize) + "px " + font;
   ctx.fillStyle = textColor;
   ctx.textAlign = "center";
-  ctx.fillText(text, (x + width / 2), (y + height / 2 + fontsize / 3));
-  if (textborder) ctx.strokeText(text, (x + width / 2), (y + height / 2 + fontsize / 3));
+  textArray.forEach(function(text, idx){
+    ctx.fillText(text, (x + width / 2), (y + height / (textArray.length + 1) + fontsize / 3 + idx * fontsize * 2));
+    if (textborder) ctx.strokeText(text, (x + width / 2), (y + height / 2 + fontsize / 3 + idx * fontsize));
+  })
+  // ctx.fillText(text, (x + width / 2), (y + height / 2 + fontsize / 3));
   ctx.font = defaultFont;
   ctx.fillStyle = defaultColor;
 }
@@ -307,11 +311,14 @@ function pushPiece(space, direction, test = false) {
   //Call pushPiece on the next square in line to determine end condition
   let code = pushPiece(space[direction], direction, test);
   //Handle endgame and win responses from next square
+  //Added conditional to actually set a winner on a winning non-test push.
   if (code == "endgame") {
     if (space.piece == "player_1Round" || space.piece == "player_1Square"){
+      if (!test) turn.winner = "player_2";
       return "player_2 win";
     }
     else {
+      if (!test) turn.winner = "player_1";
       return "player_1 win";
     }
   }
@@ -356,10 +363,13 @@ function advanceTurn() {
       const legalMove = checkNoLegalPush();
       console.log('Is there a legal move?', legalMove);
       if (!legalMove){
-        console.log(`No legal pushes! ${turn.player} loses!`)
-        // changePlayer();
-        // const message = `No legal pushes! ${turn.player} Wins!`
-        // handleEndGame(turn.player, message);
+        // console.log(`No legal pushes! ${turn.player} loses!`)
+        changePlayer();
+        turn.winner = turn.player;
+        const message = "No legal pushes!"
+        if (detectWin) return handleEndGame(turn.winner, message);
+        console.log("detectWin seems to have failed.")
+        // handleEndGame(turn.winner, message);
       }
     pushControl.reset();
     }
@@ -377,17 +387,13 @@ function checkNoLegalPush() {
     Object.values(board).forEach(function(value){
       if (value.piece == player + "Square") squaresArray.push(value);
     });
-    console.log("squaresArray:", squaresArray);
     squaresArray.forEach(function(value) {
       pushControl.space = value;
       pushControl.testPush();
-      console.log("targets?", pushControl.targets);
       Object.values(pushControl.targets).forEach(function(value){
-        console.log("value?", value);
         if (value != false) legalPush = true;
       });
     });
-    console.log("legalPush?", legalPush);
     return legalPush;
   }
 
@@ -397,8 +403,21 @@ function checkNoLegalPush() {
 let hasPiece = space => (space.piece) ? true: false;
 //Test whether a selected piece belongs to the current player
 let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false
+//detect a win
+let detectWin = () => (turn.winner) ? true : false;
 //Handle end game condition.
-function handleEndGame(winner, message) {
+function handleEndGame(winner, message = "") {
+  // component(canvas.width, canvas.height, colors.lessDark, 0, 0);
+  board.winner = {}
+  board.winner.color = colors.lessLight;
+  board.winner.x = 225.5;
+  board.winner.y = 100.5;
+  board.winner.width = 150;
+  board.winner.height = 80;
+  board.winner.message = (turn.winner == "player_1")? ["Player 1 Wins!"] : ["Player 2 Wins!"];
+  if (message) board.winner.message.push(message);
+  component(200, 150, colors.lessDark, 275.5, 100);
+  textBox(board.winner, "black", "Arial", 18, board.winner.message);
 
 }
 //Handle game logic during a Move phase
@@ -499,6 +518,10 @@ function handlePush(space) {
     if (pushControl.trueStrings.includes(message)) {
       pushControl.clearArrows();
       pushControl.reset();
+      if (detectWin) {
+        // if message = "player_1 win"
+        return handleEndGame(turn.winner, "Nice push!");
+      }
       addAnchor(space);
       advanceTurn();
       return message;
@@ -769,7 +792,6 @@ function addReserves(){
   board[space4.name] = space4;
 
   console.log("reserve squares generated.");
-  console.log(board[space4.name]);
 }
 
 /* Add Pieces to setup boxes. - Plan is to run on initial draw and after every piece is first placed.
@@ -888,6 +910,26 @@ function makeTestBoard(board){
   turn.setup = false;
 }
 
+//fake a player_1 win for testing.
+function player_1Win(board){
+  drawAnyPiece(board.c8, "player_1Square");
+  drawAnyPiece(board.d8, "player_2Square");
+  turn.setup = false;
+  turn.player = "player_1";
+  turn.phase = "push";
+  // firstPush(board.b8, "right");
+}
+
+//fake a player_2 win for testing.
+//fake a player_1 win for testing.
+function player_2Win(board){
+  drawAnyPiece(board.c8, "player_1Square");
+  drawAnyPiece(board.d8, "player_2Square");
+  turn.setup = false;
+  turn.player = "player_2";
+  turn.phase = "push";
+  // firstPush(board.c8, "left");
+}
 
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
 function startGame() {
@@ -906,8 +948,8 @@ function startGame() {
   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
 
   //Add Special buttons (e.g. pushButton)
-  textBox(board.doneButton, "#FEFEFE", "Arial", 18, "DONE");
-  textBox(board.skipButton, "#FEFEFE", "Arial", 18, "SKIP");
+  textBox(board.doneButton, "#FEFEFE", "Arial", 18, ["DONE"]);
+  textBox(board.skipButton, "#FEFEFE", "Arial", 18, ["SKIP"]);
   //Add setup regions and pieces to reserves.
   addReserves();
   populateReserves();
