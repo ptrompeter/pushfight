@@ -252,14 +252,19 @@ function updateSpace(space) {
   drawAnyPiece(space, space.piece);
 }
 
-// function refreshBoard(board) {
-//   component(canvas.width, canvas.height, colors.lessDark, 0, 0);
-//   makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
-//   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
-//   Object.values(board).forEach(function(space) {
-//     updateSpace(space);
-//   });
-// }
+function refreshBoard(board) {
+  component(canvas.width, canvas.height, colors.lessDark, 0, 0);
+  makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
+  makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
+  Object.values(board).forEach(function(space) {
+    updateSpace(space);
+    if (space.text) {
+      // let defaultStyle = ctx.fillStyle;
+      let textColor = (space.color == colors.dark || space.color == colors.lessDark) ? "white" : "black";
+      textBox(space, textColor, "Arial", 18, space.text);
+    }
+  });
+}
 
 //Draw wider center line between row 4 and 5.  Probably redraw it all the time.
 function drawCenterLine() {
@@ -611,7 +616,7 @@ function resolveDone(){
     board[turn.player + "RoundReserve"].width = 0;
     board[turn.player + "RoundReserve"].height = 0;
     board[turn.player + "RoundReserve"].drawable = false;
-    // refreshBoard(board);
+    refreshBoard(board);
     return "Player 1: you move first.";
   }
 
@@ -745,11 +750,12 @@ function addSpecialSquares(board){
     name: "doneButton",
     edges: [],
     piece: "",
-    drawable: false,
+    drawable: true,
     pushable: false,
     placeable: false,
     endgame: false,
-    hasAnchor: false
+    hasAnchor: false,
+    text: ["DONE"]
   }
   board.doneButton = doneButton1;
   const skipButton = {
@@ -761,11 +767,12 @@ function addSpecialSquares(board){
     name: "skipButton",
     edges: [],
     piece: "",
-    drawable: false,
+    drawable: true,
     pushable: false,
     placeable: false,
     endgame: false,
-    hasAnchor: false
+    hasAnchor: false,
+    text: ["SKIP"]
   }
   board.skipButton = skipButton;
 }
