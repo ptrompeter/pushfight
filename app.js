@@ -2,13 +2,48 @@
 
 // Potential color scheme: Harbor
 // Hex: 354649 / 6C7A89 / A3C6C4 / E0E7E9
-const colors = {
+//Added alternate color scheme options. changeScheme will change it.
+const harbor = {
   "dark": "#354649",
   "lessDark": "#6C7A89",
   "lessLight": "#A3C5C4",
-  "light": "#E0E7E9"
+  "light": "#E0E7E9",
+  "name": "harbor"
 }
 
+const compote = {
+  "dark": "#934A5F",
+  "lessDark": "#57648C",
+  "lessLight": "#C2B4D6",
+  "light": "#E5E5E5",
+  "name": "compote"
+}
+
+const pebble = {
+  "dark": "#433E49",
+  "lessDark": "#928390",
+  "lessLight": "#DBC1AD",
+  "light": "#F3E8EB",
+  "name": "pebble"
+}
+
+const brisk = {
+  "dark": "#4C4556",
+  "lessDark": "#872642",
+  "lessLight": "#F6C026",
+  "light": "#A0D3F9",
+  "name": "brisk"
+}
+
+const scuba = {
+  "dark": "#0C4A60",
+  "lessDark": "#EF6C33",
+  "lessLight": "#ABDFF1",
+  "light": "#E1DDDB",
+  "name": "scuba"
+}
+
+let colors = harbor;
 
 //Canvas variables.
 const canvas = document.getElementById("canvas");
@@ -29,6 +64,7 @@ const turn = {
   setup: true,
   player: "player_1",
   phase: "move1",
+  winner: false
 };
 
 /* Adding a control object for pushes.
@@ -113,8 +149,41 @@ const board = standardBoard();
 // addDirectionsToSquares(board);
 addSidesToBoard(board);
 addSpecialSquares(board);
+addReserves();
 
 
+/* Change color scheme.  Takes an object with a format similar to the color
+objects above, or a string with a color scheme name if an object already exists.
+Otherwise, cycles color scheme. */
+function changeScheme(colorObj = false, colorStr = false) {
+  const colorArray = [
+                      [compote, "compote"], [pebble, "pebble"],
+                      [brisk, "brisk"], [scuba, "scuba"], [harbor, "harbor"]
+                    ];
+  const objArray = colorArray.filter(item => item[0]);
+  const strArray = colorArray.filter(item => item[1]);
+  let idx;
+  if (!colorObj && !colorStr) {
+    if (colors == colorArray[objArray.length - 1][0]) {
+      colors = colorArray[0][0];
+    } else {
+      idx = colorArray.findIndex(function(item){
+        return item[0] == colors;
+      });
+      colors = colorArray[idx + 1][0];
+    }
+  }
+  if (colorObj) {
+      idx = objArray.findIndex(item => item == colorObj);
+      colors = objArray[idx + 1];
+  }
+  if (colorStr) {
+    idx = strArray.findIndex(item => item == colorStr);
+    colors = objArray[idx + 1]
+  }
+  refreshBoard(board);
+  populateReserves();
+}
 
 //BASIC FUNCTIONS FOR DRAWING AND ERASING SHAPES
 
@@ -170,7 +239,7 @@ function highlightSquare(space){
 }
 
 //draw a filled box with text.
-function textBox(box, textColor, font, fontsize, text, outline = true, textborder = false) {
+function textBox(box, textColor, font, fontsize, textArray, outline = true, textborder = false) {
   const {width, height, color, x, y} = box;
   const ctx = myGameArea.context;
   (outline) ? makeBoardRegion(width, height, color, x, y) : component(width, height, color, x, y);
@@ -179,8 +248,10 @@ function textBox(box, textColor, font, fontsize, text, outline = true, textborde
   ctx.font = String(fontsize) + "px " + font;
   ctx.fillStyle = textColor;
   ctx.textAlign = "center";
-  ctx.fillText(text, (x + width / 2), (y + height / 2 + fontsize / 3));
-  if (textborder) ctx.strokeText(text, (x + width / 2), (y + height / 2 + fontsize / 3));
+  textArray.forEach(function(text, idx){
+    ctx.fillText(text, (x + width / 2), (y + height / (textArray.length + 1) + fontsize / 3 + idx * fontsize * 2));
+    if (textborder) ctx.strokeText(text, (x + width / 2), (y + height / 2 + fontsize / 3 + idx * fontsize));
+  })
   ctx.font = defaultFont;
   ctx.fillStyle = defaultColor;
 }
@@ -205,6 +276,7 @@ function drawPoly(offsetObj, coords, options = arrow.options){
 
 //Draw any piece, given a space and a piece-name.
 function drawAnyPiece(space, piece = ""){
+  makeBoardRegion(50, 50, colors.lessLight, space.x, space.y);
   component(48, 48, colors.lessLight, space.x + 1, space.y +1);
   if (piece == "player_1Square"){
     component(30, 30, colors.light, space.x + 10, space.y + 10);
@@ -239,8 +311,6 @@ function addAnchor(space){
   anchorSquare = space;
   space.hasAnchor = true;
 }
-// draw setup spaces
-
 
 //I need a better drawing function that just draws whatever is on the square
 function updateSpace(space) {
@@ -249,6 +319,30 @@ function updateSpace(space) {
   }
   drawAnyPiece(space, space.piece);
 }
+//squares drawn on initial board seem to have fixed colors, rather than pointers
+//to a color object.  Drafting a refreshColors function to try to reset the counter.
+//TODO: It would be better if this function were unnecessary.
+function refreshColors(board) {
+  Object.values(board).forEach(function(value){console.log(value.color)});
+}
+
+//Redraw the board.
+function refreshBoard(board) {
+  // const ctx = myGameArea.context;
+  console.log("colors", colors);
+  console.log("window:", window);
+  component(canvas.width, canvas.height, colors.lessDark, 0, 0);
+  makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
+  makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
+  Object.values(board).forEach(function(space) {
+    updateSpace(space);
+    if (space.text) {
+      // let defaultStyle = ctx.fillStyle;
+      let textColor = (space.color == colors.dark || space.color == colors.lessDark) ? "white" : "black";
+      textBox(space, textColor, "Arial", 18, space.text);
+    }
+  });
+}
 
 //Draw wider center line between row 4 and 5.  Probably redraw it all the time.
 function drawCenterLine() {
@@ -256,10 +350,25 @@ function drawCenterLine() {
   const defaultLineWidth = ctx.lineWidth;
   ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.moveTo(50, 300);
-  ctx.lineTo(250, 300);
+  ctx.moveTo(49.5, 299.5);
+  ctx.lineTo(249.5, 299.5);
   ctx.stroke();
   ctx.lineWidth = defaultLineWidth;
+}
+
+function drawBoard(board) {
+  for (var key of Object.keys(board)) {
+    if (board[key].drawable) {
+      makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
+    }
+  }
+  //Draw side boxes (walls)
+  makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
+  makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
+
+  //Add Special buttons (e.g. pushButton)
+  textBox(board.doneButton, colors.light, "Arial", 18, ["DONE"]);
+  textBox(board.skipButton, colors.light, "Arial", 18, ["SKIP"]);
 }
 
 //FUNCTIONS TO MANIPULATE PIECES
@@ -307,11 +416,14 @@ function pushPiece(space, direction, test = false) {
   //Call pushPiece on the next square in line to determine end condition
   let code = pushPiece(space[direction], direction, test);
   //Handle endgame and win responses from next square
+  //Added conditional to actually set a winner on a winning non-test push.
   if (code == "endgame") {
     if (space.piece == "player_1Round" || space.piece == "player_1Square"){
+      if (!test) turn.winner = "player_2";
       return "player_2 win";
     }
     else {
+      if (!test) turn.winner = "player_1";
       return "player_1 win";
     }
   }
@@ -353,11 +465,14 @@ function advanceTurn() {
   } else {
     turn.phase = phaseArray[phaseArray.indexOf(turn.phase) + 1];
     if (turn.phase == "push"){
-      if (!checkNoLegalPush()){
-        console.log(`No legal pushes! ${turn.player} loses!`)
-        // changePlayer();
-        // const message = `No legal pushes! ${turn.player} Wins!`
-        // handleEndGame(turn.player, message);
+      const legalMove = checkNoLegalPush();
+      if (!legalMove){
+        changePlayer();
+        turn.winner = turn.player;
+        const message = "No legal pushes!"
+        if (detectWin()) return handleEndGame(turn.winner, message);
+        console.log("detectWin seems to have failed.")
+        // handleEndGame(turn.winner, message);
       }
     pushControl.reset();
     }
@@ -371,16 +486,18 @@ function checkNoLegalPush() {
   const squaresArray = [];
   if (turn.phase == "push") {
     let player = turn.player;
+    let legalPush = false;
     Object.values(board).forEach(function(value){
       if (value.piece == player + "Square") squaresArray.push(value);
     });
     squaresArray.forEach(function(value) {
       pushControl.space = value;
-      pushControl.testPush;
+      pushControl.testPush();
       Object.values(pushControl.targets).forEach(function(value){
-      if (value != false) return true;
+        if (value != false) legalPush = true;
       });
     });
+    return legalPush;
   }
 
 }
@@ -389,8 +506,21 @@ function checkNoLegalPush() {
 let hasPiece = space => (space.piece) ? true: false;
 //Test whether a selected piece belongs to the current player
 let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false
+//detect a win
+let detectWin = () => (turn.winner) ? true : false;
 //Handle end game condition.
-function handleEndGame(winner, message) {
+function handleEndGame(winner, message = "") {
+  // component(canvas.width, canvas.height, colors.lessDark, 0, 0);
+  board.winner = {}
+  board.winner.color = colors.lessLight;
+  board.winner.x = 225.5;
+  board.winner.y = 100.5;
+  board.winner.width = 150;
+  board.winner.height = 80;
+  board.winner.message = (turn.winner == "player_1")? ["Player 1 Wins!"] : ["Player 2 Wins!"];
+  if (message) board.winner.message.push(message);
+  component(200, 150, colors.lessDark, 275.5, 100);
+  textBox(board.winner, "black", "Arial", 18, board.winner.message);
 
 }
 //Handle game logic during a Move phase
@@ -426,7 +556,7 @@ function handleMove(space) {
 //Skip buttom advances turn to push phase.
 function skip(){
   if (moveControl.space) {
-    update(moveControl.space);
+    updateSpace(moveControl.space);
     moveControl.space = false;
   }
   while (turn.phase != "push"){
@@ -440,7 +570,6 @@ function skip(){
 let testArray = [];
 function testEmptyPath(startSpace, endSpace) {
   testArray.push(startSpace);
-  // console.log("start = end?", startSpace == endSpace);
   if (startSpace == endSpace) return true;
   let directions = ["up", "down", "left", "right"];
   let message = false;
@@ -455,10 +584,6 @@ function testEmptyPath(startSpace, endSpace) {
 
   };
   return message;
-}
-
-function alternateEmptyPath(startSpace, endSpace){
-
 }
 
 //Handle game logic during a Push phase
@@ -491,6 +616,10 @@ function handlePush(space) {
     if (pushControl.trueStrings.includes(message)) {
       pushControl.clearArrows();
       pushControl.reset();
+      if (detectWin()) {
+        // if message = "player_1 win"
+        return handleEndGame(turn.winner, "Nice push!");
+      }
       addAnchor(space);
       advanceTurn();
       return message;
@@ -503,23 +632,31 @@ function handlePush(space) {
 
 //Handle game logic during endturn phase...maybe unnecessary?
 function endTurn() {
-  console.log("hitting endTurn");
-  console.log("turn before endTurn:", turn);
   turn.phase = "Move1";
   changePlayer();
-  console.log("turn after endTurn:", turn);
   return `${turn.player} player: begin turn!`
 }
 //Manage game.
 function handleGame(space) {
+  if (space.name == "reset") {
+    turn.setup = true;
+    turn.player = "player_1";
+    turn.phase = "move_1";
+    moveControl.space = false;
+    Object.values(board).forEach(function(value){
+      if (parseInt(value.name[1])) value.piece = false;
+    })
+    addReserves();
+    startGame();
+  }
   if (turn.setup) {
-    console.log(handleSetup(space));
+    handleSetup(space);
   } else if (turn.phase == "move1" || turn.phase == "move2") {
-    console.log(handleMove(space));
+    handleMove(space);
   } else if (turn.phase == "push") {
-    console.log(handlePush(space));
+    handlePush(space);
   } else {
-    console.log(endTurn());
+    endTurn();
   }
 }
 //Setup phase functions.
@@ -563,7 +700,28 @@ function resolveDone(){
     return "Player 2: Place your Pieces.";
   } else {
     turn.setup = false;
+    //The next lines edit away the piece, width, and height attributes of the
+    //reserve squares so they aren't redrawn. This is a terrible way to handle it.
+    //TODO: Condense the following lines.  So far, delete is not a good option.
+    board[turn.player + "SquareReserve"].piece = "";
+    board[turn.player + "SquareReserve"].width = 0;
+    board[turn.player + "SquareReserve"].height = 0;
+    board[turn.player + "SquareReserve"].drawable = false;
+    board[turn.player + "RoundReserve"].piece = "";
+    board[turn.player + "RoundReserve"].width = 0;
+    board[turn.player + "RoundReserve"].height = 0;
+    board[turn.player + "RoundReserve"].drawable = false;
     changePlayer();
+    board[turn.player + "SquareReserve"].drawable = false;
+    board[turn.player + "SquareReserve"].piece = "";
+    board[turn.player + "SquareReserve"].width = 0;
+    board[turn.player + "SquareReserve"].height = 0;
+    board[turn.player + "RoundReserve"].piece = "";
+    board[turn.player + "RoundReserve"].width = 0;
+    board[turn.player + "RoundReserve"].height = 0;
+    board[turn.player + "RoundReserve"].drawable = false;
+    console.log("resoving refreshBoard.");
+    refreshBoard(board);
     return "Player 1: you move first.";
   }
 
@@ -600,6 +758,7 @@ function standardBoard(){
   const board = {}
 
   //define function to generate board edges
+  //TODO: Do I still need this?
   function makeEdges(column, iter, name) {
     try {
       let adjacentSquare = columns[columns.indexOf(column) - 1] + iter.toString();
@@ -647,7 +806,6 @@ function standardBoard(){
         hasAnchor: false
       }
       makeEdges(column, i, name);
-
     }
   }
   /* I've added columns and rows to surround the playable area
@@ -696,11 +854,12 @@ function addSpecialSquares(board){
     name: "doneButton",
     edges: [],
     piece: "",
-    drawable: false,
+    drawable: true,
     pushable: false,
     placeable: false,
     endgame: false,
-    hasAnchor: false
+    hasAnchor: false,
+    text: ["DONE"]
   }
   board.doneButton = doneButton1;
   const skipButton = {
@@ -712,11 +871,12 @@ function addSpecialSquares(board){
     name: "skipButton",
     edges: [],
     piece: "",
-    drawable: false,
+    drawable: true,
     pushable: false,
     placeable: false,
     endgame: false,
-    hasAnchor: false
+    hasAnchor: false,
+    text: ["SKIP"]
   }
   board.skipButton = skipButton;
 }
@@ -759,9 +919,6 @@ function addReserves(){
   space4.name = space4.piece + "Reserve";
   space4.num = 3;
   board[space4.name] = space4;
-
-  console.log("reserve squares generated.");
-  console.log(board[space4.name]);
 }
 
 /* Add Pieces to setup boxes. - Plan is to run on initial draw and after every piece is first placed.
@@ -791,6 +948,26 @@ function addSquare(offsetObj, color, options = {}) {
     component(width, height, color, x, y);
     myGameArea.context.strokeRect(x, y, width, height);
   }
+}
+
+function addReset(){
+  let resetButton = {};
+  resetButton.height = 125;
+  resetButton.width = 100;
+  resetButton.x = 299.5;
+  resetButton.y = 299.5;
+  resetButton.color = colors.dark;
+  resetButton.text = ["RESET"];
+  resetButton.name = "reset";
+  resetButton.textColor = "white";
+  resetButton.piece = false;
+  resetButton.drawable = false;
+  resetButton.pushable = false;
+  resetButton.placeable = false;
+  board[resetButton.name] = resetButton;
+  let reset = board.reset;
+
+  textBox(reset, reset.textColor, "Arial", 24, reset.text);
 }
 
 //Draw a circle on a region.  Centers on box by default.
@@ -865,29 +1042,62 @@ function addSidesToBoard(board){
   Object.values(board).forEach((square) => addSides(square));
 }
 
+//generates a Sample board for testing.
+function makeTestBoard(board){
+  drawAnyPiece(board.c3, "player_1Square");
+  drawAnyPiece(board.b4, "player_1Square");
+  drawAnyPiece(board.c4, "player_1Round");
+  drawAnyPiece(board.d4, "player_1Round");
+  drawAnyPiece(board.e4, "player_1Square");
+  drawAnyPiece(board.b5, "player_2Square");
+  drawAnyPiece(board.c5, "player_2Round");
+  drawAnyPiece(board.d5, "player_2Round");
+  drawAnyPiece(board.d6, "player_2Square");
+  drawAnyPiece(board.e5, "player_2Square");
+  turn.setup = false;
+}
+
+//fake a player_1 win for testing.
+function player_1Win(board){
+  drawAnyPiece(board.c8, "player_1Square");
+  drawAnyPiece(board.d8, "player_2Square");
+  turn.setup = false;
+  turn.player = "player_1";
+  turn.phase = "push";
+}
+
+//fake a player_2 win for testing.
+function player_2Win(board){
+  drawAnyPiece(board.c8, "player_1Square");
+  drawAnyPiece(board.d8, "player_2Square");
+  turn.setup = false;
+  turn.player = "player_2";
+  turn.phase = "push";
+}
 
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
 function startGame() {
   myGameArea.start();
   //Draw Background
   component(canvas.width, canvas.height, colors.lessDark, 0, 0);
+  drawBoard(board);
+  populateReserves();
 
   //Generate drawn squares for playable squares on the board.
-  for (var key of Object.keys(board)) {
-    if (board[key].drawable) {
-      makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
-    }
-  }
-  //Draw side boxes (walls)
-  makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
-  makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
-
-  //Add Special buttons (e.g. pushButton)
-  textBox(board.doneButton, "#FEFEFE", "Arial", 18, "DONE");
-  textBox(board.skipButton, "#FEFEFE", "Arial", 18, "SKIP");
+  // for (var key of Object.keys(board)) {
+  //   if (board[key].drawable) {
+  //     makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
+  //   }
+  // }
+  // //Draw side boxes (walls)
+  // makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
+  // makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
+  //
+  // //Add Special buttons (e.g. pushButton)
+  // textBox(board.doneButton, "#FEFEFE", "Arial", 18, ["DONE"]);
+  // textBox(board.skipButton, "#FEFEFE", "Arial", 18, ["SKIP"]);
   //Add setup regions and pieces to reserves.
-  addReserves();
-  populateReserves();
+
 }
 
 
@@ -918,22 +1128,11 @@ canvas.addEventListener('click', (e) => {
     };
   }
   if (!space) console.log("outside clickable region");
-  if (space.name == "pushButton") {
-    console.log("name: ", name);
-    console.log("board[name]: ", board[name]);
-    console.log("board[name].x: ", board[name].x);
-
-    highlightSquare(board.pushButton);
-  }
-  console.log("space: ", space);
   if (space) {
-    console.log("starting handleGame");
+    console.log("space: ", space);
     handleGame(space);
-    } else {
-      console.log("did not click on space");
-
     }
-})
+});
 
 //Adding a call to start the game on page load.
 startGame();
