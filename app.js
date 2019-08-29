@@ -149,6 +149,8 @@ const board = standardBoard();
 // addDirectionsToSquares(board);
 addSidesToBoard(board);
 addSpecialSquares(board);
+addReserves();
+
 
 /* Change color scheme.  Takes an object with a format similar to the color
 objects above, or a string with a color scheme name if an object already exists.
@@ -161,20 +163,14 @@ function changeScheme(colorObj = false, colorStr = false) {
   const objArray = colorArray.filter(item => item[0]);
   const strArray = colorArray.filter(item => item[1]);
   let idx;
-  console.log("colorObj?", colorObj, "colorStr?", colorStr);
-  console.log("!union of above", !colorObj && !colorStr);
   if (!colorObj && !colorStr) {
-    if (colors == objArray[objArray.length - 1]) {
-      colors = objArray[0];
+    if (colors == colorArray[objArray.length - 1][0]) {
+      colors = colorArray[0][0];
     } else {
-      idx = objArray.findIndex(function(item){
-        console.log("item", item);
-        console.log("colors", colors)
-        console.log("item == colors?", item == colors);
-        return item == colors;
-
+      idx = colorArray.findIndex(function(item){
+        return item[0] == colors;
       });
-      colors = objArray[idx + 1][0];
+      colors = colorArray[idx + 1][0];
     }
   }
   if (colorObj) {
@@ -186,7 +182,7 @@ function changeScheme(colorObj = false, colorStr = false) {
     colors = objArray[idx + 1]
   }
   refreshBoard(board);
-  // populateReserves();
+  populateReserves();
 }
 
 //BASIC FUNCTIONS FOR DRAWING AND ERASING SHAPES
@@ -323,8 +319,18 @@ function updateSpace(space) {
   }
   drawAnyPiece(space, space.piece);
 }
+//squares drawn on initial board seem to have fixed colors, rather than pointers
+//to a color object.  Drafting a refreshColors function to try to reset the counter.
+//TODO: It would be better if this function were unnecessary.
+function refreshColors(board) {
+  Object.values(board).forEach(function(value){console.log(value.color)});
+}
 
+//Redraw the board.
 function refreshBoard(board) {
+  // const ctx = myGameArea.context;
+  console.log("colors", colors);
+  console.log("window:", window);
   component(canvas.width, canvas.height, colors.lessDark, 0, 0);
   makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
@@ -348,6 +354,21 @@ function drawCenterLine() {
   ctx.lineTo(249.5, 299.5);
   ctx.stroke();
   ctx.lineWidth = defaultLineWidth;
+}
+
+function drawBoard(board) {
+  for (var key of Object.keys(board)) {
+    if (board[key].drawable) {
+      makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
+    }
+  }
+  //Draw side boxes (walls)
+  makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
+  makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
+
+  //Add Special buttons (e.g. pushButton)
+  textBox(board.doneButton, colors.light, "Arial", 18, ["DONE"]);
+  textBox(board.skipButton, colors.light, "Arial", 18, ["SKIP"]);
 }
 
 //FUNCTIONS TO MANIPULATE PIECES
@@ -688,6 +709,7 @@ function resolveDone(){
     board[turn.player + "RoundReserve"].width = 0;
     board[turn.player + "RoundReserve"].height = 0;
     board[turn.player + "RoundReserve"].drawable = false;
+    console.log("resoving refreshBoard.");
     refreshBoard(board);
     return "Player 1: you move first.";
   }
@@ -773,7 +795,6 @@ function standardBoard(){
         hasAnchor: false
       }
       makeEdges(column, i, name);
-
     }
   }
   /* I've added columns and rows to surround the playable area
@@ -1028,23 +1049,24 @@ function startGame() {
   myGameArea.start();
   //Draw Background
   component(canvas.width, canvas.height, colors.lessDark, 0, 0);
+  drawBoard(board);
+  populateReserves();
 
   //Generate drawn squares for playable squares on the board.
-  for (var key of Object.keys(board)) {
-    if (board[key].drawable) {
-      makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
-    }
-  }
-  //Draw side boxes (walls)
-  makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
-  makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
-
-  //Add Special buttons (e.g. pushButton)
-  textBox(board.doneButton, "#FEFEFE", "Arial", 18, ["DONE"]);
-  textBox(board.skipButton, "#FEFEFE", "Arial", 18, ["SKIP"]);
+  // for (var key of Object.keys(board)) {
+  //   if (board[key].drawable) {
+  //     makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
+  //   }
+  // }
+  // //Draw side boxes (walls)
+  // makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
+  // makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
+  //
+  // //Add Special buttons (e.g. pushButton)
+  // textBox(board.doneButton, "#FEFEFE", "Arial", 18, ["DONE"]);
+  // textBox(board.skipButton, "#FEFEFE", "Arial", 18, ["SKIP"]);
   //Add setup regions and pieces to reserves.
-  addReserves();
-  populateReserves();
+
 }
 
 
