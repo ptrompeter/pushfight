@@ -184,7 +184,6 @@ function textBox(box, textColor, font, fontsize, textArray, outline = true, text
     ctx.fillText(text, (x + width / 2), (y + height / (textArray.length + 1) + fontsize / 3 + idx * fontsize * 2));
     if (textborder) ctx.strokeText(text, (x + width / 2), (y + height / 2 + fontsize / 3 + idx * fontsize));
   })
-  // ctx.fillText(text, (x + width / 2), (y + height / 2 + fontsize / 3));
   ctx.font = defaultFont;
   ctx.fillStyle = defaultColor;
 }
@@ -209,6 +208,7 @@ function drawPoly(offsetObj, coords, options = arrow.options){
 
 //Draw any piece, given a space and a piece-name.
 function drawAnyPiece(space, piece = ""){
+  makeBoardRegion(50, 50, colors.lessLight, space.x, space.y);
   component(48, 48, colors.lessLight, space.x + 1, space.y +1);
   if (piece == "player_1Square"){
     component(30, 30, colors.light, space.x + 10, space.y + 10);
@@ -243,8 +243,6 @@ function addAnchor(space){
   anchorSquare = space;
   space.hasAnchor = true;
 }
-// draw setup spaces
-
 
 //I need a better drawing function that just draws whatever is on the square
 function updateSpace(space) {
@@ -253,6 +251,15 @@ function updateSpace(space) {
   }
   drawAnyPiece(space, space.piece);
 }
+
+// function refreshBoard(board) {
+//   component(canvas.width, canvas.height, colors.lessDark, 0, 0);
+//   makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
+//   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
+//   Object.values(board).forEach(function(space) {
+//     updateSpace(space);
+//   });
+// }
 
 //Draw wider center line between row 4 and 5.  Probably redraw it all the time.
 function drawCenterLine() {
@@ -361,13 +368,11 @@ function advanceTurn() {
     turn.phase = phaseArray[phaseArray.indexOf(turn.phase) + 1];
     if (turn.phase == "push"){
       const legalMove = checkNoLegalPush();
-      console.log('Is there a legal move?', legalMove);
       if (!legalMove){
-        // console.log(`No legal pushes! ${turn.player} loses!`)
         changePlayer();
         turn.winner = turn.player;
         const message = "No legal pushes!"
-        if (detectWin) return handleEndGame(turn.winner, message);
+        if (detectWin()) return handleEndGame(turn.winner, message);
         console.log("detectWin seems to have failed.")
         // handleEndGame(turn.winner, message);
       }
@@ -453,7 +458,7 @@ function handleMove(space) {
 //Skip buttom advances turn to push phase.
 function skip(){
   if (moveControl.space) {
-    update(moveControl.space);
+    updateSpace(moveControl.space);
     moveControl.space = false;
   }
   while (turn.phase != "push"){
@@ -467,7 +472,6 @@ function skip(){
 let testArray = [];
 function testEmptyPath(startSpace, endSpace) {
   testArray.push(startSpace);
-  // console.log("start = end?", startSpace == endSpace);
   if (startSpace == endSpace) return true;
   let directions = ["up", "down", "left", "right"];
   let message = false;
@@ -482,10 +486,6 @@ function testEmptyPath(startSpace, endSpace) {
 
   };
   return message;
-}
-
-function alternateEmptyPath(startSpace, endSpace){
-
 }
 
 //Handle game logic during a Push phase
@@ -518,7 +518,7 @@ function handlePush(space) {
     if (pushControl.trueStrings.includes(message)) {
       pushControl.clearArrows();
       pushControl.reset();
-      if (detectWin) {
+      if (detectWin()) {
         // if message = "player_1 win"
         return handleEndGame(turn.winner, "Nice push!");
       }
@@ -534,23 +534,20 @@ function handlePush(space) {
 
 //Handle game logic during endturn phase...maybe unnecessary?
 function endTurn() {
-  console.log("hitting endTurn");
-  console.log("turn before endTurn:", turn);
   turn.phase = "Move1";
   changePlayer();
-  console.log("turn after endTurn:", turn);
   return `${turn.player} player: begin turn!`
 }
 //Manage game.
 function handleGame(space) {
   if (turn.setup) {
-    console.log(handleSetup(space));
+    handleSetup(space);
   } else if (turn.phase == "move1" || turn.phase == "move2") {
-    console.log(handleMove(space));
+    handleMove(space);
   } else if (turn.phase == "push") {
-    console.log(handlePush(space));
+    handlePush(space);
   } else {
-    console.log(endTurn());
+    endTurn();
   }
 }
 //Setup phase functions.
@@ -594,7 +591,27 @@ function resolveDone(){
     return "Player 2: Place your Pieces.";
   } else {
     turn.setup = false;
+    //The next lines edit away the piece, width, and height attributes of the
+    //reserve squares so they aren't redrawn. This is a terrible way to handle it.
+    //TODO: Condense the following lines.  So far, delete is not a good option.
+    board[turn.player + "SquareReserve"].piece = "";
+    board[turn.player + "SquareReserve"].width = 0;
+    board[turn.player + "SquareReserve"].height = 0;
+    board[turn.player + "SquareReserve"].drawable = false;
+    board[turn.player + "RoundReserve"].piece = "";
+    board[turn.player + "RoundReserve"].width = 0;
+    board[turn.player + "RoundReserve"].height = 0;
+    board[turn.player + "RoundReserve"].drawable = false;
     changePlayer();
+    board[turn.player + "SquareReserve"].drawable = false;
+    board[turn.player + "SquareReserve"].piece = "";
+    board[turn.player + "SquareReserve"].width = 0;
+    board[turn.player + "SquareReserve"].height = 0;
+    board[turn.player + "RoundReserve"].piece = "";
+    board[turn.player + "RoundReserve"].width = 0;
+    board[turn.player + "RoundReserve"].height = 0;
+    board[turn.player + "RoundReserve"].drawable = false;
+    // refreshBoard(board);
     return "Player 1: you move first.";
   }
 
@@ -631,6 +648,7 @@ function standardBoard(){
   const board = {}
 
   //define function to generate board edges
+  //TODO: Do I still need this?
   function makeEdges(column, iter, name) {
     try {
       let adjacentSquare = columns[columns.indexOf(column) - 1] + iter.toString();
@@ -790,8 +808,6 @@ function addReserves(){
   space4.name = space4.piece + "Reserve";
   space4.num = 3;
   board[space4.name] = space4;
-
-  console.log("reserve squares generated.");
 }
 
 /* Add Pieces to setup boxes. - Plan is to run on initial draw and after every piece is first placed.
@@ -917,18 +933,15 @@ function player_1Win(board){
   turn.setup = false;
   turn.player = "player_1";
   turn.phase = "push";
-  // firstPush(board.b8, "right");
 }
 
 //fake a player_2 win for testing.
-//fake a player_1 win for testing.
 function player_2Win(board){
   drawAnyPiece(board.c8, "player_1Square");
   drawAnyPiece(board.d8, "player_2Square");
   turn.setup = false;
   turn.player = "player_2";
   turn.phase = "push";
-  // firstPush(board.c8, "left");
 }
 
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
@@ -985,13 +998,9 @@ canvas.addEventListener('click', (e) => {
   if (!space) console.log("outside clickable region");
   if (space) {
     console.log("space: ", space);
-    console.log("starting handleGame");
     handleGame(space);
-    } else {
-      console.log("did not click on space");
-
     }
-})
+});
 
 //Adding a call to start the game on page load.
 startGame();
