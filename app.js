@@ -638,6 +638,17 @@ function endTurn() {
 }
 //Manage game.
 function handleGame(space) {
+  if (space.name == "reset") {
+    turn.setup = true;
+    turn.player = "player_1";
+    turn.phase = "move_1";
+    moveControl.space = false;
+    Object.values(board).forEach(function(value){
+      if (parseInt(value.name[1])) value.piece = false;
+    })
+    addReserves();
+    startGame();
+  }
   if (turn.setup) {
     handleSetup(space);
   } else if (turn.phase == "move1" || turn.phase == "move2") {
@@ -937,6 +948,26 @@ function addSquare(offsetObj, color, options = {}) {
     component(width, height, color, x, y);
     myGameArea.context.strokeRect(x, y, width, height);
   }
+}
+
+function addReset(){
+  let resetButton = {};
+  resetButton.height = 125;
+  resetButton.width = 100;
+  resetButton.x = 299.5;
+  resetButton.y = 299.5;
+  resetButton.color = colors.dark;
+  resetButton.text = ["RESET"];
+  resetButton.name = "reset";
+  resetButton.textColor = "white";
+  resetButton.piece = false;
+  resetButton.drawable = false;
+  resetButton.pushable = false;
+  resetButton.placeable = false;
+  board[resetButton.name] = resetButton;
+  let reset = board.reset;
+
+  textBox(reset, reset.textColor, "Arial", 24, reset.text);
 }
 
 //Draw a circle on a region.  Centers on box by default.
