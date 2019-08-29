@@ -2,13 +2,48 @@
 
 // Potential color scheme: Harbor
 // Hex: 354649 / 6C7A89 / A3C6C4 / E0E7E9
-const colors = {
+//Added alternate color scheme options. changeScheme will change it.
+const harbor = {
   "dark": "#354649",
   "lessDark": "#6C7A89",
   "lessLight": "#A3C5C4",
-  "light": "#E0E7E9"
+  "light": "#E0E7E9",
+  "name": "harbor"
 }
 
+const compote = {
+  "dark": "#934A5F",
+  "lessDark": "#57648C",
+  "lessLight": "#C2B4D6",
+  "light": "#E5E5E5",
+  "name": "compote"
+}
+
+const pebble = {
+  "dark": "#433E49",
+  "lessDark": "#928390",
+  "lessLight": "#DBC1AD",
+  "light": "#F3E8EB",
+  "name": "pebble"
+}
+
+const brisk = {
+  "dark": "#4C4556",
+  "lessDark": "#872642",
+  "lessLight": "#F6C026",
+  "light": "#A0D3F9",
+  "name": "brisk"
+}
+
+const scuba = {
+  "dark": "#0C4A60",
+  "lessDark": "#EF6C33",
+  "lessLight": "#ABDFF1",
+  "light": "#E1DDDB",
+  "name": "scuba"
+}
+
+let colors = harbor;
 
 //Canvas variables.
 const canvas = document.getElementById("canvas");
@@ -115,7 +150,44 @@ const board = standardBoard();
 addSidesToBoard(board);
 addSpecialSquares(board);
 
+/* Change color scheme.  Takes an object with a format similar to the color
+objects above, or a string with a color scheme name if an object already exists.
+Otherwise, cycles color scheme. */
+function changeScheme(colorObj = false, colorStr = false) {
+  const colorArray = [
+                      [compote, "compote"], [pebble, "pebble"],
+                      [brisk, "brisk"], [scuba, "scuba"], [harbor, "harbor"]
+                    ];
+  const objArray = colorArray.filter(item => item[0]);
+  const strArray = colorArray.filter(item => item[1]);
+  let idx;
+  console.log("colorObj?", colorObj, "colorStr?", colorStr);
+  console.log("!union of above", !colorObj && !colorStr);
+  if (!colorObj && !colorStr) {
+    if (colors == objArray[objArray.length - 1]) {
+      colors = objArray[0];
+    } else {
+      idx = objArray.findIndex(function(item){
+        console.log("item", item);
+        console.log("colors", colors)
+        console.log("item == colors?", item == colors);
+        return item == colors;
 
+      });
+      colors = objArray[idx + 1][0];
+    }
+  }
+  if (colorObj) {
+      idx = objArray.findIndex(item => item == colorObj);
+      colors = objArray[idx + 1];
+  }
+  if (colorStr) {
+    idx = strArray.findIndex(item => item == colorStr);
+    colors = objArray[idx + 1]
+  }
+  refreshBoard(board);
+  // populateReserves();
+}
 
 //BASIC FUNCTIONS FOR DRAWING AND ERASING SHAPES
 
@@ -272,8 +344,8 @@ function drawCenterLine() {
   const defaultLineWidth = ctx.lineWidth;
   ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.moveTo(50, 300);
-  ctx.lineTo(250, 300);
+  ctx.moveTo(49.5, 299.5);
+  ctx.lineTo(249.5, 299.5);
   ctx.stroke();
   ctx.lineWidth = defaultLineWidth;
 }
