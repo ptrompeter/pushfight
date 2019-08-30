@@ -116,6 +116,15 @@ const borderTiles = ["a2", "a3", "a4", "a5", "a6", "b1", "b7",
                       "e8", "f3", "f4", "f5", "f6", "f7"
                     ];
 
+const boardSpaces = {
+                     "a": [2, 6],
+                     "b": [1, 8],
+                     "c": [0, 9],
+                     "d": [0, 9],
+                     "e": [1, 8],
+                     "f": [3, 7]
+                    };
+
 const columns = "abcdef";
 let anchorSquare = "";
 
@@ -151,6 +160,29 @@ addSidesToBoard(board);
 addSpecialSquares(board);
 addReserves();
 
+const defaultSpace = {
+        width: 50,
+        height: 50,
+        color: colors.lessLight,
+        piece: false,
+        drawable: true,
+        pushable: true,
+        placeable: true,
+        endgame: false,
+        hasAnchor: false
+      }
+
+const defaultControl = {
+        width: 50,
+        height: 50,
+        color: colors.dark,
+        drawable: true,
+        placeable: false,
+        font: "Arial",
+        text: [],
+        textSize: 18,
+        textColor: "white",
+      }
 
 /* Change color scheme.  Takes an object with a format similar to the color
 objects above, or a string with a color scheme name if an object already exists.
@@ -749,6 +781,72 @@ function setupPiece(startSpace, targetSpace){
   --startSpace.num;
   populateReserves();
   return "setupPiece complete.";
+}
+
+//FUNCTIONS FOR BOARD generation
+
+//generate space object, add it to the board, takes string with name, an object with params,
+//and a second object (for modifying a template object).
+function addSpaceToBoard(board, name, extras = false, options = defaultSpace) {
+  options.name = name;
+  if (extras) Object.entries(extras).forEach(([key, value]) => options[key] = value);
+  board[name] = options;
+  return board[name];
+}
+
+//Supposed to make a square for every playable square on the board.
+function addPlayableSpaces(board, spaceObject) {
+  Object.entries(spaceObject).forEach(function([key, value]){
+    for (var i = value[0]; i = value[1]; i++){
+      let name = key + i.toString();
+      let extras = {
+        x: (columns.indexOf(key) * 50) + .5,
+        y: i * 50 + 50 + .5
+      }
+      addSpaceToBoard(board, name, extras);
+    }
+  });
+  Object.values(board).forEach((value) => addFourSides(value));
+  borderTiles.forEach(function(value){
+    board[value].drawable = false;
+    board[value].placeable = false;
+    board[value].width = 0;
+    board[value].height = 0;
+    if (["a","f"].includes(value[0])) {
+      board[value].pushable = false;
+    } else {
+      board[value].endgame = true;
+    }
+  });
+}
+
+//Generate directional edges for a space without space.edges array.
+function addFourSides(space){
+  let column = square.name[0];;
+  let row = parseInt(space.name[1]);
+  let newName = column + String(row - 1);
+  space.up = (Object.keys(board).includes(newName) ? board[newName] : false)
+  newName = column + String(row + 1);
+  space.down = (Object.keys(board).includes(newName) ? board[newName] : false)
+  if (column != "a"){
+    newName = columns[columns.indexOf(column) - 1] + String(row);
+    space.left = (Object.keys(board).includes(newName) ? board[newName] : false)
+  } else {
+    space.left = false;
+  }
+  if (column != "f"){
+    newName = columns[columns.indexOf(column) + 1] + String(row);
+    space.right = (Object.keys(board).includes(newName) ? board[newName] : false)
+  } else {
+    space.right = false;
+  }
+}
+//Add up, down, left, right:
+
+function testArguments(){
+  const {height, width, x, y} = arguments[0];
+  let myheight = (height) ? height : 50;
+  return myheight;
 }
 
 //CODE BLOCK TO GENERATE A COMPLETE BOARD OBJECT.  CONSIDER REFACTOR?
