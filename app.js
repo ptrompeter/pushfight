@@ -233,7 +233,6 @@ function makeBoardRegion(width, height, color, x, y) {
 }
 
 //this function draws filled rectangles.
-//TODO: Refactor to give this a better name
 //TODO: Refactor to make this accept an object instead of 5 params
 function simpleRect(width, height, color, x, y) {
   const ctx = myGameArea.context;
@@ -532,7 +531,8 @@ let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false
 let detectWin = () => (turn.winner) ? true : false;
 //Handle end game condition.
 function handleEndGame(winner, message = "") {
-  board.winner = {}
+  board.winner = {};
+  board.winner.showText = true;
   board.winner.color = colors.lessLight;
   board.winner.x = 225.5;
   board.winner.y = 100.5;
@@ -933,14 +933,17 @@ function addSquare(offsetObj, color, options = {}) {
 //TODO: hideSpace and showSpace need more thought - they def. don't work
 //with boxes with text.  Good idea, but...Not implemented.  Consider deleting.
 function hideSpace(space){
+  space.drawable = false;
   space.oldWidth = space.width;
   space.oldHeight = space.height;
   space.width = 0;
   space.height = 0;
+  space.piece = false;
   if (space.text) space.showText = false;
 }
 
 function showSpace(space){
+  space.drawable = true;
   if (space.oldWidth) space.width = space.oldWidth;
   if (space.oldHeight) space.height = space.oldHeight;
   if (space.text) space.showText = true;
