@@ -152,14 +152,6 @@ arrow.up.forEach((pair) => arrow.down.push([50 - pair[0], 50 - pair[1]]));
 arrow.right = [];
 arrow.up.forEach((pair) => arrow.right.push([50 - pair[1], 50 - pair[0]]));
 
-
-//generate Board object with nodes and edges.
-const board = standardBoard();
-// addDirectionsToSquares(board);
-addSidesToBoard(board);
-addSpecialSquares(board);
-addReserves();
-
 const defaultSpace = {
         width: 50,
         height: 50,
@@ -183,6 +175,15 @@ const defaultControl = {
         textSize: 18,
         textColor: "white",
       }
+
+
+//generate Board object with nodes and edges.
+const board = standardBoard();
+// addDirectionsToSquares(board);
+// addSidesToBoard(board);
+// addSpecialSquares(board);
+addReserves();
+
 
 /* Change color scheme.  Takes an object with a format similar to the color
 objects above, or a string with a color scheme name if an object already exists.
@@ -399,8 +400,8 @@ function drawBoard(board) {
   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
 
   //Add Special buttons (e.g. pushButton)
-  textBox(board.doneButton, colors.light, "Arial", 18, ["DONE"]);
-  textBox(board.skipButton, colors.light, "Arial", 18, ["SKIP"]);
+  textBox(board.done, colors.light, "Arial", 18, ["DONE"]);
+  textBox(board.skip, colors.light, "Arial", 18, ["SKIP"]);
 }
 
 //FUNCTIONS TO MANIPULATE PIECES
@@ -551,13 +552,13 @@ function handleEndGame(winner, message = "") {
   board.winner.height = 80;
   board.winner.message = (turn.winner == "player_1")? ["Player 1 Wins!"] : ["Player 2 Wins!"];
   if (message) board.winner.message.push(message);
-  component(200, 150, colors.lessDark, 275.5, 100);
+  component(200, 350, colors.lessDark, 275.5, 100);
   textBox(board.winner, "black", "Arial", 18, board.winner.message);
 
 }
 //Handle game logic during a Move phase
 function handleMove(space) {
-  if (space.name == "skipButton") return skip();
+  if (space.name == "skip") return skip();
   if (!moveControl.space) {
     if (!matchPiece(space) || (!hasPiece(space))) return `Choose a tile with one of your pieces, ${turn.player}.`;
     highlightSquare(space);
@@ -694,7 +695,7 @@ function handleGame(space) {
 //Setup phase functions.
 //Manage setup.
 function handleSetup(space){
-  if (space.name == "doneButton") return resolveDone();
+  if (space.name == "done") return resolveDone();
   if (testReserve(space) && space.num < 1) return "No pieces left in that reserve.";
   if (!moveControl.space) {
     if (!space.piece) return "Select a tile with one of your pieces.";
@@ -788,41 +789,44 @@ function setupPiece(startSpace, targetSpace){
 //generate space object, add it to the board, takes string with name, an object with params,
 //and a second object (for modifying a template object).
 function addSpaceToBoard(board, name, extras = false, options = defaultSpace) {
-  options.name = name;
-  if (extras) Object.entries(extras).forEach(([key, value]) => options[key] = value);
-  board[name] = options;
+  let thisSpace = {};
+  Object.entries(options).forEach(([key, value]) => thisSpace[key] = value);
+  thisSpace["name"] = name;
+  if (extras) Object.entries(extras).forEach(([key, value]) => thisSpace[key] = value);
+  board[name] = thisSpace;
   return board[name];
 }
 
 //Supposed to make a square for every playable square on the board.
 function addPlayableSpaces(board, spaceObject) {
   Object.entries(spaceObject).forEach(function([key, value]){
-    for (var i = value[0]; i = value[1]; i++){
-      let name = key + i.toString();
-      let extras = {
+    for (var i = value[0]; i <= value[1]; i++){
+      let name1 = key + i.toString();
+      let extras1 = {
         x: (columns.indexOf(key) * 50) + .5,
         y: i * 50 + 50 + .5
       }
-      addSpaceToBoard(board, name, extras);
+      addSpaceToBoard(board, name1, extras1);
     }
   });
-  Object.values(board).forEach((value) => addFourSides(value));
-  borderTiles.forEach(function(value){
-    board[value].drawable = false;
-    board[value].placeable = false;
-    board[value].width = 0;
-    board[value].height = 0;
-    if (["a","f"].includes(value[0])) {
-      board[value].pushable = false;
+  Object.values(board).forEach((value) => addFourSides(board, value));
+  borderTiles.forEach(function(item){
+    board[item].drawable = false;
+    board[item].placeable = false;
+    board[item].width = 0;
+    board[item].height = 0;
+    if (["a","f"].includes(item[0])) {
+      board[item].pushable = false;
     } else {
-      board[value].endgame = true;
+      board[item].endgame = true;
     }
   });
+  return board;
 }
 
 //Generate directional edges for a space without space.edges array.
-function addFourSides(space){
-  let column = square.name[0];;
+function addFourSides(board, space){
+  let column = space.name[0];
   let row = parseInt(space.name[1]);
   let newName = column + String(row - 1);
   space.up = (Object.keys(board).includes(newName) ? board[newName] : false)
@@ -841,145 +845,34 @@ function addFourSides(space){
     space.right = false;
   }
 }
-//Add up, down, left, right:
 
-function testArguments(){
-  const {height, width, x, y} = arguments[0];
-  let myheight = (height) ? height : 50;
-  return myheight;
-}
 
-//CODE BLOCK TO GENERATE A COMPLETE BOARD OBJECT.  CONSIDER REFACTOR?
-
-//return an object with a sub-object for each square on a standard board
+//return an object with a sub-object for each square on a standard board,
+//plus skip and done boxes.  Piece reserves come from addReserves.
 function standardBoard(){
-  const board = {}
+  console.log("In standardBoard")
+  let board = {};
+  let doneExtras = {};
+  let skipExtras = {};
 
-  //define function to generate board edges
-  //TODO: Do I still need this?
-  function makeEdges(column, iter, name) {
-    try {
-      let adjacentSquare = columns[columns.indexOf(column) - 1] + iter.toString();
-      if (board[adjacentSquare]){
-        board[name].edges.push(adjacentSquare);
-        board[adjacentSquare].edges.push(name);
-      }
-    }
-    catch(error) {
-      console.log(name);
-      console.log(error);
-    }
-    finally {
-      try {
-        let adjacentSquare = column + (iter - 1).toString();
-        if (board[adjacentSquare]){
-          board[name].edges.push(adjacentSquare);
-          board[adjacentSquare].edges.push(name);
-        }
-      }
-      catch(error) {
-        console.log(error);
-      }
-    }
+  doneExtras.name = "done";
+  doneExtras.text = ["DONE"];
+  doneExtras.x = 295.5;
+  doneExtras.y = 200.5;
+  doneExtras.width = 60;
+  skipExtras.name = "skip";
+  skipExtras.text = ["SKIP"];
+  skipExtras.x = 295.5;
+  skipExtras.y = 280.5;
+  skipExtras.width = 60;
 
-  }
-  //define function to make a column of the board
-  //Importantly, this function adds edges between adjacent squares.
-  function makeBoxesByColumn(column, topRow, bottomRow){
-    for (let i = topRow; i <= bottomRow; i++) {
-      let name = column + i.toString();
-      board[name] = {
-        width: 50,
-        height: 50,
-        color: colors.lessLight,
-        x: (columns.indexOf(column) * 50) + .5,
-        y: (i * 50 + 50) + .5,
-        name: name,
-        edges: [],
-        piece: "",
-        drawable: true,
-        pushable: true,
-        placeable: true,
-        endgame: false,
-        hasAnchor: false
-      }
-      makeEdges(column, i, name);
-    }
-  }
-  /* I've added columns and rows to surround the playable area
-  as part of the board creation process...mostly to simplify the
-  creation of edges.  Below, I'm going to edit all the boarder times
-  to set them to undrawable and unplacable, and to variously edit their pushable
-  and endgame conditions. I'm also going to set their height and width to zero,
-  to make them unclickable.  I'm doing all this to create end destinations
-  for a push command.
-  */
-  makeBoxesByColumn("a", 2, 6);
-  makeBoxesByColumn("b", 1, 8);
-  makeBoxesByColumn("c", 0, 9);
-  makeBoxesByColumn("d", 0, 9);
-  makeBoxesByColumn("e", 1, 8);
-  makeBoxesByColumn("f", 3, 7);
-
-  //set details for boarder tiles.  Consider refactor into functions.
-  for ( let item of borderTiles) {
-    board[item].height = 0;
-    board[item].width = 0;
-    board[item].drawable = false;
-    board[item].placeable = false;
-    if (item[0] == "a" || item[0] == "f") {
-      board[item].pushable = false;
-    } else {
-      board[item].endgame = true;
-    }
-  }
-  console.log("board: ", board);
+  board = addPlayableSpaces(board, boardSpaces);
+  addSpaceToBoard(board, doneExtras.name, doneExtras, defaultControl);
+  addSpaceToBoard(board, skipExtras.name, skipExtras, defaultControl);
 
   return board;
 }
 
-/* TODO: The following functions are used for initial board setup.
-They should probably be reorganized. */
-
-//adding a function to create 1-off special squares
-function addSpecialSquares(board){
-  const doneButton1 = {
-    width: 60,
-    height: 50,
-    color: colors.dark,
-    x: 295.5,
-    y: 100.5,
-    name: "doneButton",
-    edges: [],
-    piece: "",
-    drawable: true,
-    pushable: false,
-    placeable: false,
-    endgame: false,
-    hasAnchor: false,
-    text: ["DONE"]
-  }
-  board.doneButton = doneButton1;
-  const skipButton = {
-    width: 60,
-    height: 50,
-    color: colors.dark,
-    x: 295.5,
-    y: 180.5,
-    name: "skipButton",
-    edges: [],
-    piece: "",
-    drawable: true,
-    pushable: false,
-    placeable: false,
-    endgame: false,
-    hasAnchor: false,
-    text: ["SKIP"]
-  }
-  board.skipButton = skipButton;
-}
-
-//simpler function that shaves down unnecessary makePieceReserve complexity.
 //Generate reserve spaces in the board object.  Drawn with populateReserves().
 function addReserves(){
   let space = {};
