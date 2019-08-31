@@ -366,7 +366,7 @@ function refreshBoard(board) {
   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
   Object.values(board).forEach(function(space) {
     updateSpace(space);
-    if (space.text) {
+    if (space.text && space.drawable) {
       // let defaultStyle = ctx.fillStyle;
       let textColor = (space.color == colors.dark || space.color == colors.lessDark) ? "white" : "black";
       textBox(space, textColor, "Arial", 18, space.text);
@@ -551,6 +551,7 @@ function handleEndGame(winner, message = "") {
   if (message) board.winner.message.push(message);
   component(200, 350, colors.lessDark, 275.5, 100);
   textBox(board.winner, "black", "Arial", 18, board.winner.message);
+  addReset();
 
 }
 //Handle game logic during a Move phase
@@ -672,9 +673,10 @@ function handleGame(space) {
     turn.setup = true;
     turn.player = "player_1";
     turn.phase = "move_1";
+    turn.winner = false;
     moveControl.space = false;
     Object.values(board).forEach(function(value){
-      if (parseInt(value.name[1])) value.piece = false;
+      if (value.placeable) value.piece = false;
     })
     addReserves();
     startGame();
