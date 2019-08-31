@@ -179,9 +179,6 @@ const defaultControl = {
 
 //generate Board object with nodes and edges.
 const board = standardBoard();
-// addDirectionsToSquares(board);
-// addSidesToBoard(board);
-// addSpecialSquares(board);
 addReserves();
 
 
@@ -1006,32 +1003,6 @@ function generateCircles(offsetObj, player, number, redraw = true){
     addCircle(offsetObj, options.color, options);
   }
 }
-//writing a single function to add up, down, left, and right properties to squares.
-function addSides(square){
-  let column = square.name[0];;
-  let row = parseInt(square.name[1]);
-  let newName = column + String(row - 1);
-  square.up = (square.edges.includes(newName) ? board[newName] : false)
-  newName = column + String(row + 1);
-  square.down = (square.edges.includes(newName) ? board[newName] : false)
-  if (column != "a"){
-    newName = columns[columns.indexOf(column) - 1] + String(row);
-    square.left = (square.edges.includes(newName) ? board[newName] : false)
-  } else {
-    square.left = false;
-  }
-  if (column != "f"){
-    newName = columns[columns.indexOf(column) + 1] + String(row);
-    square.right = (square.edges.includes(newName) ? board[newName] : false)
-  } else {
-    square.right = false;
-  }
-}
-
-//Run addSides on all board spaces.
-function addSidesToBoard(board){
-  Object.values(board).forEach((square) => addSides(square));
-}
 
 //generates a Sample board for testing.
 function makeTestBoard(board){
@@ -1073,24 +1044,7 @@ function startGame() {
   component(canvas.width, canvas.height, colors.lessDark, 0, 0);
   drawBoard(board);
   populateReserves();
-
-  //Generate drawn squares for playable squares on the board.
-  // for (var key of Object.keys(board)) {
-  //   if (board[key].drawable) {
-  //     makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
-  //   }
-  // }
-  // //Draw side boxes (walls)
-  // makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
-  // makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
-  //
-  // //Add Special buttons (e.g. pushButton)
-  // textBox(board.doneButton, "#FEFEFE", "Arial", 18, ["DONE"]);
-  // textBox(board.skipButton, "#FEFEFE", "Arial", 18, ["SKIP"]);
-  //Add setup regions and pieces to reserves.
-
 }
-
 
 
 
