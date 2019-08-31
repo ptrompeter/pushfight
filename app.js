@@ -174,6 +174,7 @@ const defaultControl = {
         text: [],
         textSize: 18,
         textColor: "white",
+        showText: true,
       }
 
 
@@ -284,7 +285,7 @@ function textBox(box, textColor, font, fontsize, textArray, outline = true, text
   ctx.fillStyle = textColor;
   ctx.textAlign = "center";
   textArray.forEach(function(text, idx){
-    ctx.fillText(text, (x + width / 2), (y + height / (textArray.length + 1) + fontsize / 3 + idx * fontsize * 2));
+    if (box.showText) ctx.fillText(text, (x + width / 2), (y + height / (textArray.length + 1) + fontsize / 3 + idx * fontsize * 2));
     if (textborder) ctx.strokeText(text, (x + width / 2), (y + height / 2 + fontsize / 3 + idx * fontsize));
   })
   ctx.font = defaultFont;
@@ -667,7 +668,9 @@ function handleGame(space) {
     moveControl.space = false;
     Object.values(board).forEach(function(value){
       if (value.placeable) value.piece = false;
-    })
+    });
+    //TODO: Handling showing the color box here.  Not a great spot?
+    showSpace(board.color);
     addReserves();
     startGame();
   }
@@ -934,12 +937,13 @@ function hideSpace(space){
   space.oldHeight = space.height;
   space.width = 0;
   space.height = 0;
-  refreshBoard(board);
+  if (space.text) space.showText = false;
 }
 
 function showSpace(space){
   if (space.oldWidth) space.width = space.oldWidth;
   if (space.oldHeight) space.height = space.oldHeight;
+  if (space.text) space.showText = true;
 }
 
 //TODO: This could be refactored to use standard square generation mechanics.
@@ -957,10 +961,11 @@ function addReset(){
   resetButton.drawable = false;
   resetButton.pushable = false;
   resetButton.placeable = false;
+  resetButton.showText = true;
   board[resetButton.name] = resetButton;
   let reset = board.reset;
   //Hide color box to prevent cross-clicking.
-  // hideSpace(board.color);
+  hideSpace(board.color);
   textBox(reset, reset.textColor, "Arial", 24, reset.text);
 }
 
