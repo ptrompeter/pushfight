@@ -217,6 +217,7 @@ function changeScheme(colorObj = false, colorStr = false) {
   refreshBoard(board);
   if (anchorSquare) addAnchor(anchorSquare);
   populateReserves();
+  if (moveControl.space) highlightSquare(moveControl.space);
 }
 
 //BASIC FUNCTIONS FOR DRAWING AND ERASING SHAPES
@@ -329,7 +330,7 @@ function drawAnyPiece(space, piece = ""){
   drawCenterLine();
 }
 
-//draw a red highlight around a piece to indicate anchor.
+//draw a black highlight around a piece to indicate anchor.
 function addAnchor(space){
   const ctx = myGameArea.context;
   let defaultColor = ctx.strokeStyle;
