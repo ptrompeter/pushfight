@@ -376,6 +376,7 @@ function refreshBoard(board) {
       let textColor = (space.color == colors.dark || space.color == colors.lessDark) ? "white" : "black";
       textBox(space, textColor, "Arial", 18, space.text);
     }
+  if (turn.setup) populateReserves();
   });
 }
 
@@ -389,21 +390,6 @@ function drawCenterLine() {
   ctx.lineTo(249.5, 299.5);
   ctx.stroke();
   ctx.lineWidth = defaultLineWidth;
-}
-
-function drawBoard(board) {
-  for (var key of Object.keys(board)) {
-    if (board[key].drawable) {
-      makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
-    }
-  }
-  //Draw side boxes (walls)
-  makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
-  makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
-
-  //Add Special buttons (e.g. pushButton)
-  textBox(board.done, colors.light, "Arial", 18, ["DONE"]);
-  textBox(board.skip, colors.light, "Arial", 18, ["SKIP"]);
 }
 
 //FUNCTIONS TO MANIPULATE PIECES
@@ -856,23 +842,17 @@ function addFourSides(board, space){
 function standardBoard(){
   console.log("In standardBoard")
   let board = {};
-  let doneExtras = {};
-  let skipExtras = {};
-
-  doneExtras.name = "done";
-  doneExtras.text = ["DONE"];
-  doneExtras.x = 295.5;
-  doneExtras.y = 200.5;
-  doneExtras.width = 60;
-  skipExtras.name = "skip";
-  skipExtras.text = ["SKIP"];
-  skipExtras.x = 295.5;
-  skipExtras.y = 280.5;
-  skipExtras.width = 60;
-
+  const nameArray = ["done", "skip", "color"];
   board = addPlayableSpaces(board, boardSpaces);
-  addSpaceToBoard(board, doneExtras.name, doneExtras, defaultControl);
-  addSpaceToBoard(board, skipExtras.name, skipExtras, defaultControl);
+  nameArray.forEach(function(name, idx){
+    let spaceExtras = {};
+    spaceExtras.name = name;
+    spaceExtras.text = [name.toUpperCase()];
+    spaceExtras.width = 80;
+    spaceExtras.x = 295.5;
+    spaceExtras.y = 200.5 + 80 * idx;
+    addSpaceToBoard(board, spaceExtras.name, spaceExtras, defaultControl);
+  });
 
   return board;
 }
@@ -1049,8 +1029,7 @@ function startGame() {
   myGameArea.start();
   //Draw Background
   simpleRect(canvas.width, canvas.height, colors.lessDark, 0, 0);
-  drawBoard(board);
-  populateReserves();
+  refreshBoard(board);
 }
 
 
