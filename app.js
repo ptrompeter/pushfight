@@ -211,6 +211,9 @@ function changeScheme(colorObj = false, colorStr = false) {
     idx = strArray.findIndex(item => item == colorStr);
     colors = objArray[idx + 1]
   }
+  Object.values(board).forEach(function(value){
+    value.color = (value.text) ? colors.dark : colors.lessLight; 
+  })
   refreshBoard(board);
   populateReserves();
 }
