@@ -679,6 +679,7 @@ function handleGame(space) {
   } else if (turn.phase == "push") {
     handlePush(space);
   } else {
+    console.log("You hit endturn! Somehow...")
     endTurn();
   }
 }
@@ -925,6 +926,22 @@ function addSquare(offsetObj, color, options = {}) {
   }
 }
 
+//take a space, hide it, refresh board.
+//TODO: hideSpace and showSpace need more thought - they def. don't work
+//with boxes with text.  Good idea, but...Not implemented.  Consider deleting.
+function hideSpace(space){
+  space.oldWidth = space.width;
+  space.oldHeight = space.height;
+  space.width = 0;
+  space.height = 0;
+  refreshBoard(board);
+}
+
+function showSpace(space){
+  if (space.oldWidth) space.width = space.oldWidth;
+  if (space.oldHeight) space.height = space.oldHeight;
+}
+
 //TODO: This could be refactored to use standard square generation mechanics.
 function addReset(){
   let resetButton = {};
@@ -942,7 +959,8 @@ function addReset(){
   resetButton.placeable = false;
   board[resetButton.name] = resetButton;
   let reset = board.reset;
-
+  //Hide color box to prevent cross-clicking.
+  // hideSpace(board.color);
   textBox(reset, reset.textColor, "Arial", 24, reset.text);
 }
 
