@@ -531,7 +531,6 @@ let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false
 let detectWin = () => (turn.winner) ? true : false;
 //Handle end game condition.
 function handleEndGame(winner, message = "") {
-  // simpleRect(canvas.width, canvas.height, colors.lessDark, 0, 0);
   board.winner = {}
   board.winner.color = colors.lessLight;
   board.winner.x = 225.5;
@@ -672,6 +671,7 @@ function handleGame(space) {
     addReserves();
     startGame();
   }
+  if (space.name == "color") changeScheme();
   if (turn.setup) {
     handleSetup(space);
   } else if (turn.phase == "move1" || turn.phase == "move2") {
@@ -682,7 +682,7 @@ function handleGame(space) {
     endTurn();
   }
 }
-//Setup phase functions.
+
 //Manage setup.
 function handleSetup(space){
   if (space.name == "done") return resolveDone();
@@ -925,6 +925,7 @@ function addSquare(offsetObj, color, options = {}) {
   }
 }
 
+//TODO: This could be refactored to use standard square generation mechanics.
 function addReset(){
   let resetButton = {};
   resetButton.height = 125;
