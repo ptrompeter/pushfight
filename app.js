@@ -212,9 +212,10 @@ function changeScheme(colorObj = false, colorStr = false) {
     colors = objArray[idx + 1]
   }
   Object.values(board).forEach(function(value){
-    value.color = (value.text) ? colors.dark : colors.lessLight; 
+    value.color = (value.text) ? colors.dark : colors.lessLight;
   })
   refreshBoard(board);
+  if (anchorSquare) addAnchor(anchorSquare);
   populateReserves();
 }
 
@@ -224,7 +225,7 @@ function changeScheme(colorObj = false, colorStr = false) {
 //TODO: Refactor to make this accept an object instead of 5 params
 function makeBoardRegion(width, height, color, x, y) {
   const ctx = myGameArea.context;
-  component(width, height, color, x, y);
+  simpleRect(width, height, color, x, y);
   ctx.strokeRect(x, y, width, height);
   drawCenterLine();
 }
@@ -232,7 +233,7 @@ function makeBoardRegion(width, height, color, x, y) {
 //this function draws filled rectangles.
 //TODO: Refactor to give this a better name
 //TODO: Refactor to make this accept an object instead of 5 params
-function component(width, height, color, x, y) {
+function simpleRect(width, height, color, x, y) {
   const ctx = myGameArea.context;
   ctx.fillStyle = color;
   ctx.fillRect(x, y, width, height);
@@ -275,7 +276,7 @@ function highlightSquare(space){
 function textBox(box, textColor, font, fontsize, textArray, outline = true, textborder = false) {
   const {width, height, color, x, y} = box;
   const ctx = myGameArea.context;
-  (outline) ? makeBoardRegion(width, height, color, x, y) : component(width, height, color, x, y);
+  (outline) ? makeBoardRegion(width, height, color, x, y) : simpleRect(width, height, color, x, y);
   let defaultFont = ctx.font;
   let defaultColor = ctx.fillStyle;
   ctx.font = String(fontsize) + "px " + font;
@@ -310,12 +311,12 @@ function drawPoly(offsetObj, coords, options = arrow.options){
 //Draw any piece, given a space and a piece-name.
 function drawAnyPiece(space, piece = ""){
   makeBoardRegion(50, 50, colors.lessLight, space.x, space.y);
-  component(48, 48, colors.lessLight, space.x + 1, space.y +1);
+  simpleRect(48, 48, colors.lessLight, space.x + 1, space.y +1);
   if (piece == "player_1Square"){
-    component(30, 30, colors.light, space.x + 10, space.y + 10);
+    simpleRect(30, 30, colors.light, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   } else if (piece == "player_2Square"){
-    component(30, 30, colors.dark, space.x + 10, space.y + 10);
+    simpleRect(30, 30, colors.dark, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   } else if (piece == "player_1Round"){
     drawCircle(15, colors.light, space.x + 25, space.y + 25);
@@ -332,15 +333,15 @@ function drawAnyPiece(space, piece = ""){
 function addAnchor(space){
   const ctx = myGameArea.context;
   let defaultColor = ctx.strokeStyle;
+  if (anchorSquare) {
+    anchorSquare.hasAnchor = false;
+    updateSpace(anchorSquare);
+  }
   ctx.lineWidth = 5;
   ctx.strokeStyle = "black";
   ctx.strokeRect(space.x + 5, space.y + 5, space.width - 10, space.height -10);
   ctx.lineWidth = 1;
   ctx.strokeStyle = defaultColor;
-  if (anchorSquare) {
-    anchorSquare.hasAnchor = false;
-    updateSpace(anchorSquare);
-  }
   anchorSquare = space;
   space.hasAnchor = true;
 }
@@ -364,7 +365,7 @@ function refreshBoard(board) {
   // const ctx = myGameArea.context;
   console.log("colors", colors);
   console.log("window:", window);
-  component(canvas.width, canvas.height, colors.lessDark, 0, 0);
+  simpleRect(canvas.width, canvas.height, colors.lessDark, 0, 0);
   makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
   Object.values(board).forEach(function(space) {
@@ -543,7 +544,7 @@ let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false
 let detectWin = () => (turn.winner) ? true : false;
 //Handle end game condition.
 function handleEndGame(winner, message = "") {
-  // component(canvas.width, canvas.height, colors.lessDark, 0, 0);
+  // simpleRect(canvas.width, canvas.height, colors.lessDark, 0, 0);
   board.winner = {}
   board.winner.color = colors.lessLight;
   board.winner.x = 225.5;
@@ -552,7 +553,7 @@ function handleEndGame(winner, message = "") {
   board.winner.height = 80;
   board.winner.message = (turn.winner == "player_1")? ["Player 1 Wins!"] : ["Player 2 Wins!"];
   if (message) board.winner.message.push(message);
-  component(200, 350, colors.lessDark, 275.5, 100);
+  simpleRect(200, 350, colors.lessDark, 275.5, 100);
   textBox(board.winner, "black", "Arial", 18, board.winner.message);
   addReset();
 
@@ -918,7 +919,7 @@ function addReserves(){
 TODO: Reorganize these functions in the file.  PopulateReserves is really a setup handler helper function.
 the drawing functions should go with the other drawing functions, I imagine.
 TODO: Maybe refactor other functions to use addSquare and addCircle...Hide obnoxious
-component and strokeRect pattern.  */
+simpleRect and strokeRect pattern.  */
 
 function populateReserves(){
   for (let i = 1; i < 3; i++){
@@ -934,11 +935,11 @@ function populateReserves(){
 function addSquare(offsetObj, color, options = {}) {
   let {width, height, x, y} = offsetObj;
   if (options == {}) {
-    component(30, 30, color, space.x + 10, space.y + 10);
+    simpleRect(30, 30, color, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   }  else {
     let {width, height, x, y} = options;
-    component(width, height, color, x, y);
+    simpleRect(width, height, color, x, y);
     myGameArea.context.strokeRect(x, y, width, height);
   }
 }
@@ -1046,7 +1047,7 @@ function player_2Win(board){
 function startGame() {
   myGameArea.start();
   //Draw Background
-  component(canvas.width, canvas.height, colors.lessDark, 0, 0);
+  simpleRect(canvas.width, canvas.height, colors.lessDark, 0, 0);
   drawBoard(board);
   populateReserves();
 }
