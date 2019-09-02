@@ -728,25 +728,18 @@ function resolveDone(){
   } else {
     turn.setup = false;
     //The next lines edit away the piece, width, and height attributes of the
-    //reserve squares so they aren't redrawn. This is a terrible way to handle it.
-    //TODO: Condense the following lines.  So far, delete is not a good option.
-    board[turn.player + "SquareReserve"].piece = "";
-    board[turn.player + "SquareReserve"].width = 0;
-    board[turn.player + "SquareReserve"].height = 0;
-    board[turn.player + "SquareReserve"].drawable = false;
-    board[turn.player + "RoundReserve"].piece = "";
-    board[turn.player + "RoundReserve"].width = 0;
-    board[turn.player + "RoundReserve"].height = 0;
-    board[turn.player + "RoundReserve"].drawable = false;
+    //reserve squares so they aren't redrawn. Can hideSquare be used for this?
+    function hideReserves(player){
+      ["SquareReserve", "RoundReserve"].forEach(function(item){
+        board[player + item].piece = false;
+        board[player + item].width = 0;
+        board[player + item].height = 0;
+        board[player + item].drawable = false;
+      });
+    }
+    hideReserves(turn.player);
     changePlayer();
-    board[turn.player + "SquareReserve"].drawable = false;
-    board[turn.player + "SquareReserve"].piece = "";
-    board[turn.player + "SquareReserve"].width = 0;
-    board[turn.player + "SquareReserve"].height = 0;
-    board[turn.player + "RoundReserve"].piece = "";
-    board[turn.player + "RoundReserve"].width = 0;
-    board[turn.player + "RoundReserve"].height = 0;
-    board[turn.player + "RoundReserve"].drawable = false;
+    hideReserves(turn.player);
     console.log("resoving refreshBoard.");
     refreshBoard(board);
     return "Player 1: you move first.";
