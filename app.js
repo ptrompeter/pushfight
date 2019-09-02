@@ -534,10 +534,10 @@ function handleEndGame(winner, message = "") {
   board.winner = {};
   board.winner.showText = true;
   board.winner.color = colors.lessLight;
-  board.winner.x = 225.5;
+  board.winner.x = 210.5;
   board.winner.y = 100.5;
-  board.winner.width = 150;
-  board.winner.height = 80;
+  board.winner.width = 165;
+  board.winner.height = 90;
   board.winner.message = (turn.winner == "player_1")? ["Player 1 Wins!"] : ["Player 2 Wins!"];
   if (message) board.winner.message.push(message);
   simpleRect(200, 350, colors.lessDark, 275.5, 100);
@@ -639,9 +639,9 @@ function handlePush(space) {
       pushControl.clearArrows();
       pushControl.reset();
       if (detectWin()) {
-        // if message = "player_1 win"
         return handleEndGame(turn.winner, "Nice push!");
       }
+      //TODO: next two lines in else block?
       addAnchor(space);
       advanceTurn();
       return message;
@@ -690,7 +690,7 @@ function handleGame(space) {
 //Manage setup.
 function handleSetup(space){
   if (space.name == "done") return resolveDone();
-  if (testReserve(space) && space.num < 1) return "No pieces left in that reserve.";
+  if (testReserve(space) && space.num < 1) return "Reserve Empty";
   if (!moveControl.space) {
     if (!space.piece) return "Select a tile with one of your pieces.";
     if (!matchPiece(space)) return "You can only move your own pieces during setup.";
@@ -790,10 +790,8 @@ function addPlayableSpaces(board, spaceObject) {
   });
   Object.values(board).forEach((value) => addFourSides(board, value));
   borderTiles.forEach(function(item){
-    board[item].drawable = false;
+    hideSpace(board[item]);
     board[item].placeable = false;
-    board[item].width = 0;
-    board[item].height = 0;
     if (["a","f"].includes(item[0])) {
       board[item].pushable = false;
     } else {
@@ -937,10 +935,10 @@ function showSpace(space){
 //TODO: This could be refactored to use standard square generation mechanics.
 function addReset(){
   let resetButton = {};
-  resetButton.height = 125;
-  resetButton.width = 100;
-  resetButton.x = 299.5;
-  resetButton.y = 299.5;
+  resetButton.height = 50;
+  resetButton.width = 90;
+  resetButton.x = 279.5;
+  resetButton.y = 224.5;
   resetButton.color = colors.dark;
   resetButton.text = ["RESET"];
   resetButton.name = "reset";
@@ -950,11 +948,12 @@ function addReset(){
   resetButton.pushable = false;
   resetButton.placeable = false;
   resetButton.showText = true;
+  resetButton.textSize = 20;
   board[resetButton.name] = resetButton;
   let reset = board.reset;
   //Hide color box to prevent cross-clicking.
   hideSpace(board.color);
-  textBox(reset, reset.textColor, "Arial", 24, reset.text);
+  textBox(reset, reset.textColor, "Arial", reset.textSize, reset.text, true);
 }
 
 //Draw a circle on a region.  Centers on box by default.
