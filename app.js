@@ -727,24 +727,16 @@ function resolveDone(){
     return "Player 2: Place your Pieces.";
   } else {
     turn.setup = false;
-    //The next lines edit away the piece, width, and height attributes of the
-    //reserve squares so they aren't redrawn. Can hideSquare be used for this?
-    function hideReserves(player){
-      ["SquareReserve", "RoundReserve"].forEach(function(item){
-        board[player + item].piece = false;
-        board[player + item].width = 0;
-        board[player + item].height = 0;
-        board[player + item].drawable = false;
-      });
-    }
-    hideReserves(turn.player);
+    //Hide the reserve spaces during gameplay.
+    hideSpace(board.player_1SquareReserve);
+    hideSpace(board.player_1RoundReserve);
+    hideSpace(board.player_2SquareReserve);
+    hideSpace(board.player_2RoundReserve);
     changePlayer();
-    hideReserves(turn.player);
     console.log("resoving refreshBoard.");
     refreshBoard(board);
     return "Player 1: you move first.";
   }
-
 }
 //Test whether a space is a reserve square.
 function testReserve(space){
