@@ -347,18 +347,12 @@ function addAnchor(space){
   space.hasAnchor = true;
 }
 
-//I need a better drawing function that just draws whatever is on the square
+//Redraws a space - whether it has a piece or not.
 function updateSpace(space) {
   if (!space.drawable){
     return "invalid space";
   }
   drawAnyPiece(space, space.piece);
-}
-//squares drawn on initial board seem to have fixed colors, rather than pointers
-//to a color object.  Drafting a refreshColors function to try to reset the counter.
-//TODO: It would be better if this function were unnecessary.
-function refreshColors(board) {
-  Object.values(board).forEach(function(value){console.log(value.color)});
 }
 
 //Redraw the board.
@@ -591,7 +585,6 @@ function skip(){
   }
   return "Advancing turn to push phase."
 }
-
 //Test whether two spaces are connected by empty spaces.
 //TODO: This is a hacky guess-and-check traversal.  Make it better.
 let testArray = [];
@@ -657,14 +650,9 @@ function handlePush(space) {
   }
 }
 
-//Handle game logic during endturn phase...maybe unnecessary?
-//TODO: I think this will currently trigger if players misclick during
-//turn.phase = gameOver.  Address.
+//TODO: Use or remove this function. Right now it triggers on misclick during gameOver.
 function endTurn() {
   console.log("Click reset to start new game.")
-  // turn.phase = "Move1";
-  // changePlayer();
-  // return `${turn.player} player: begin turn!`
 }
 //Manage game.
 function handleGame(space) {
@@ -728,6 +716,7 @@ function handleSetup(space){
   }
   return "Something weird happened.";
 }
+
 //Handle click of done button during setup.
 function resolveDone(){
   if (moveControl.space) return "Please finish your move or cancel it before ending your setup.";
@@ -834,7 +823,6 @@ function addFourSides(board, space){
     space.right = false;
   }
 }
-
 
 //return an object with a sub-object for each square on a standard board,
 //plus skip and done boxes.  Piece reserves come from addReserves.
@@ -945,7 +933,6 @@ function showSpace(space){
 //TODO: This could be refactored to use standard square generation mechanics.
 function addReset(){
   if (board.reset) {
-    console.log("Hit showSpace(board.reset)");
     showSpace(board.reset);
   } else {
     let spaceExtras = {};
