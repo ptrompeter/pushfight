@@ -670,7 +670,10 @@ function handleGame(space) {
       if (value.placeable) value.piece = false;
     });
     //TODO: Handling showing the color box here.  Not a great spot?
+    hideSpace(board.reset);
     showSpace(board.color);
+    showSpace(board.skip);
+    showSpace(board.done);
     addReserves();
     startGame();
   }
@@ -885,9 +888,7 @@ function addReserves(){
 
 /* Add Pieces to setup boxes. - Plan is to run on initial draw and after every piece is first placed.
 TODO: Reorganize these functions in the file.  PopulateReserves is really a setup handler helper function.
-the drawing functions should go with the other drawing functions, I imagine.
-TODO: Maybe refactor other functions to use addSquare and addCircle...Hide obnoxious
-simpleRect and strokeRect pattern.  */
+the drawing functions should go with the other drawing functions, I imagine. */
 
 function populateReserves(){
   for (let i = 1; i < 3; i++){
@@ -912,7 +913,7 @@ function addSquare(offsetObj, color, options = {}) {
   }
 }
 
-//take a space, hide it, refresh board.
+//take a space, hide it, refresh board separately.
 //TODO: hideSpace and showSpace need more thought - they def. don't work
 //with boxes with text.  Good idea, but...Not implemented.  Consider deleting.
 function hideSpace(space){
@@ -934,25 +935,23 @@ function showSpace(space){
 
 //TODO: This could be refactored to use standard square generation mechanics.
 function addReset(){
-  let resetButton = {};
-  resetButton.height = 50;
-  resetButton.width = 90;
-  resetButton.x = 279.5;
-  resetButton.y = 224.5;
-  resetButton.color = colors.dark;
-  resetButton.text = ["RESET"];
-  resetButton.name = "reset";
-  resetButton.textColor = "white";
-  resetButton.piece = false;
-  resetButton.drawable = false;
-  resetButton.pushable = false;
-  resetButton.placeable = false;
-  resetButton.showText = true;
-  resetButton.textSize = 20;
-  board[resetButton.name] = resetButton;
-  let reset = board.reset;
-  //Hide color box to prevent cross-clicking.
+  if (board.reset) {
+    console.log("Hit showSpace(board.reset)");
+    showSpace(board.reset);
+  } else {
+    let spaceExtras = {};
+    spaceExtras.name = "reset";
+    spaceExtras.text = [spaceExtras.name.toUpperCase()];
+    spaceExtras.width = 90;
+    spaceExtras.x = 279.5;
+    spaceExtras.y = 224.5;
+    addSpaceToBoard(board, spaceExtras.name, spaceExtras, defaultControl);
+  }
+  //Hide controls to prevent cross-clicking.
   hideSpace(board.color);
+  hideSpace(board.skip);
+  hideSpace(board.done);
+  const reset = board.reset;
   textBox(reset, reset.textColor, "Arial", reset.textSize, reset.text, true);
 }
 
