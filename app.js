@@ -1014,7 +1014,13 @@ function makeTestBoard(board){
   drawAnyPiece(board.d5, "player_2Round");
   drawAnyPiece(board.d6, "player_2Square");
   drawAnyPiece(board.e5, "player_2Square");
-  turn.setup = false;
+  if (turn.setup) {
+    turn.player = "player_2";
+    Object.values(board).forEach(function(value){
+      if (value.name.slice(0, 6) == "player") value.num = 0;
+    })
+  }
+  resolveDone();
 }
 
 //fake a player_1 win for testing.
