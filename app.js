@@ -364,8 +364,9 @@ function refreshColors(board) {
 //Redraw the board.
 function refreshBoard(board) {
   // const ctx = myGameArea.context;
-  console.log("colors", colors);
-  console.log("window:", window);
+  // console.log("colors", colors);
+  // console.log("window:", window);
+  console.log("hit refreshBoard");
   simpleRect(canvas.width, canvas.height, colors.lessDark, 0, 0);
   makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
@@ -373,9 +374,11 @@ function refreshBoard(board) {
     updateSpace(space);
     if (space.text && space.drawable) {
       // let defaultStyle = ctx.fillStyle;
+      console.log("refreshing a textbox:", space);
       let textColor = (space.color == colors.dark || space.color == colors.lessDark) ? "white" : "black";
       textBox(space, textColor, "Arial", 18, space.text);
     }
+
   if (turn.setup) populateReserves();
   });
 }
@@ -542,6 +545,8 @@ function handleEndGame(winner, message = "") {
   if (message) board.winner.message.push(message);
   simpleRect(200, 350, colors.lessDark, 275.5, 100);
   textBox(board.winner, "black", "Arial", 18, board.winner.message);
+  //Hand setting phase to gameOver to try to cure post game end push bug.
+  turn.phase = "gameOver";
   addReset();
 
 }
@@ -653,10 +658,13 @@ function handlePush(space) {
 }
 
 //Handle game logic during endturn phase...maybe unnecessary?
+//TODO: I think this will currently trigger if players misclick during
+//turn.phase = gameOver.  Address.
 function endTurn() {
-  turn.phase = "Move1";
-  changePlayer();
-  return `${turn.player} player: begin turn!`
+  console.log("Click reset to start new game.")
+  // turn.phase = "Move1";
+  // changePlayer();
+  // return `${turn.player} player: begin turn!`
 }
 //Manage game.
 function handleGame(space) {
@@ -675,7 +683,8 @@ function handleGame(space) {
     showSpace(board.skip);
     showSpace(board.done);
     addReserves();
-    startGame();
+    refreshBoard(board);
+    // startGame();
   }
   if (space.name == "color") changeScheme();
   if (turn.setup) {
@@ -918,8 +927,8 @@ function addSquare(offsetObj, color, options = {}) {
 //with boxes with text.  Good idea, but...Not implemented.  Consider deleting.
 function hideSpace(space){
   space.drawable = false;
-  space.oldWidth = space.width;
-  space.oldHeight = space.height;
+  if (space.width) space.oldWidth = space.width;
+  if (space.height) space.oldHeight = space.height;
   space.width = 0;
   space.height = 0;
   space.piece = false;
@@ -1075,6 +1084,7 @@ canvas.addEventListener('click', (e) => {
     };
   }
   if (!space) console.log("outside clickable region");
+  if (!space) console.log("clicked on:", point);
   if (space) {
     console.log("space: ", space);
     handleGame(space);
