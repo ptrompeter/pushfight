@@ -357,18 +357,12 @@ function updateSpace(space) {
 
 //Redraw the board.
 function refreshBoard(board) {
-  // const ctx = myGameArea.context;
-  // console.log("colors", colors);
-  // console.log("window:", window);
-  console.log("hit refreshBoard");
   simpleRect(canvas.width, canvas.height, colors.lessDark, 0, 0);
   makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
   Object.values(board).forEach(function(space) {
     updateSpace(space);
     if (space.text && space.drawable) {
-      // let defaultStyle = ctx.fillStyle;
-      console.log("refreshing a textbox:", space);
       let textColor = (space.color == colors.dark || space.color == colors.lessDark) ? "white" : "black";
       textBox(space, textColor, "Arial", 18, space.text);
     }
@@ -712,7 +706,9 @@ function handleSetup(space){
     moveControl.space = false;
     return message;
   } else {
-    return move(moveControl.space, space);
+    let message = move(moveControl.space, space);
+    moveControl.space = false;
+    return message;
   }
   return "Something weird happened.";
 }
