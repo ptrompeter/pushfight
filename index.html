@@ -5,17 +5,18 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-  <link rel="stylesheet" href="css/style.css" media="screen" title="Pushfight Stylesheet" charset="utf-8">
+  <link rel="stylesheet" href="style.css" media="screen" title="Pushfight Stylesheet" charset="utf-8">
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
   <title> Pushfight</title>
 
 
 </head>
 <body>
+
   <!--Choosing a navbar Style -->
   <!--Always Expand -->
   <nav class="navbar navbar-expand navbar-dark bg-dark">
-  <a class="navbar-brand" href="#">Always expand</a>
+  <a class="navbar-brand" href="#">PUSHFIGHT</a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample02" aria-controls="navbarsExample02" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
@@ -29,11 +30,40 @@
         <a class="nav-link" href="#">Link</a>
       </li>
     </ul>
-    <form class="form-inline my-2 my-md-0">
-      <input class="form-control" type="text" placeholder="Search">
-    </form>
   </div>
 </nav>
+<div class="container">
+  <div class="row">
+    <div class="col-md-6" id="game-column">
+      <canvas id="canvas"></canvas>
+    </div>
+    <div class="col-md-6" id="rules-column">
+      <article id="long-rules">
+        <p> Pushfight is a game for two players. The goal of the game is to push one of your opponent's pieces off the board, or to prevent your opponent from having a legal push at the end of his or her turn. </p>
+        <p> Setup </p>
+        <p> The first player starts by placing its three square pieces and two round pieces anywhere on the top half of the board. The second player then responds, placing all five of its pieces on the bottom half of the board. </p>
+        <p> Movement and Pushes </p>
+        <p> Player 1 takes the first turn.  A turn consists of up to two moves followed by a push.  A player may move any of its pieces to any square on the board <b>it can reach by empty spaces</b>.  Pieces cannot move through occupied squares or off the board. </p>
+        <p> After finishing movement, the active player <b>must</b> make a push. To push, the active player chooses one of its square pieces.  It then pushes an adjacent piece (up, down, left, or right) one square in that direction. Unless obstructed by a wall or anchored piece (see below), all pieces in a line from the pushing piece are moved one square in the direction of the push. If any piece leaves the board, the owner of that piece loses and the other player wins. After completing a push, the player's turn ends and the opponent's turn begins.  Play continues until one player wins.</p>
+        <p> A push <b>must:</b>
+          <ul>
+            <li>Start with one of the active player's square pieces;</li>
+            <li>Move at least one additional piece;</li>
+            <li><b>Not</b> be prevented by a wall or anchored piece.</li>
+          </ul>
+        </p>
+        <p> A push <b>may:</b>
+          <ul>
+            <li>Be in any direction, provided at least one other piece is in that direction;</li>
+            <li>Push pieces of either color;</li>
+            <li>Cause the pushing player to lose the game by pushing his or her own piece from the board.</li>
+          </ul>
+        </p>
+        <p> Anchored Pieces </p>
+        <p> After a player pushes a piece, that piece becomes anchored until the start of owner's next turn.  This is the only piece that cannot be pushed.  There will never be more than one anchored piece on the board at any time. </p>
+    </div>
+  </div class="row">
+</div class="container">
   <!-- Expand on small -->
   <!--
   <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
@@ -68,7 +98,7 @@
   </div>
 </nav>
 -->
-  <canvas id="canvas"></canvas>
+
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>

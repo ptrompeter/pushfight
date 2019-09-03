@@ -1,0 +1,14 @@
+/* @media (min-width: 767px) {
+    .navbar {
+        top: 54px;
+    }
+
+    .pagewide {
+        height: 54px;
+    }
+} */
+@media (min-width: 400px) {
+  #canvas {
+    width: 100%;
+  }
+}
