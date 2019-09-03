@@ -116,6 +116,15 @@ const borderTiles = ["a2", "a3", "a4", "a5", "a6", "b1", "b7",
                       "e8", "f3", "f4", "f5", "f6", "f7"
                     ];
 
+const boardSpaces = {
+                     "a": [2, 6],
+                     "b": [1, 8],
+                     "c": [0, 9],
+                     "d": [0, 9],
+                     "e": [1, 8],
+                     "f": [3, 7]
+                    };
+
 const columns = "abcdef";
 let anchorSquare = "";
 
@@ -143,12 +152,34 @@ arrow.up.forEach((pair) => arrow.down.push([50 - pair[0], 50 - pair[1]]));
 arrow.right = [];
 arrow.up.forEach((pair) => arrow.right.push([50 - pair[1], 50 - pair[0]]));
 
+const defaultSpace = {
+        width: 50,
+        height: 50,
+        color: colors.lessLight,
+        piece: false,
+        drawable: true,
+        pushable: true,
+        placeable: true,
+        endgame: false,
+        hasAnchor: false
+      }
+
+const defaultControl = {
+        width: 50,
+        height: 50,
+        color: colors.dark,
+        drawable: true,
+        placeable: false,
+        font: "Arial",
+        text: [],
+        textSize: 18,
+        textColor: "white",
+        showText: true,
+      }
+
 
 //generate Board object with nodes and edges.
 const board = standardBoard();
-// addDirectionsToSquares(board);
-addSidesToBoard(board);
-addSpecialSquares(board);
 addReserves();
 
 
@@ -181,8 +212,13 @@ function changeScheme(colorObj = false, colorStr = false) {
     idx = strArray.findIndex(item => item == colorStr);
     colors = objArray[idx + 1]
   }
+  Object.values(board).forEach(function(value){
+    value.color = (value.text) ? colors.dark : colors.lessLight;
+  })
   refreshBoard(board);
+  if (anchorSquare) addAnchor(anchorSquare);
   populateReserves();
+  if (moveControl.space) highlightSquare(moveControl.space);
 }
 
 //BASIC FUNCTIONS FOR DRAWING AND ERASING SHAPES
@@ -191,15 +227,14 @@ function changeScheme(colorObj = false, colorStr = false) {
 //TODO: Refactor to make this accept an object instead of 5 params
 function makeBoardRegion(width, height, color, x, y) {
   const ctx = myGameArea.context;
-  component(width, height, color, x, y);
+  simpleRect(width, height, color, x, y);
   ctx.strokeRect(x, y, width, height);
   drawCenterLine();
 }
 
 //this function draws filled rectangles.
-//TODO: Refactor to give this a better name
 //TODO: Refactor to make this accept an object instead of 5 params
-function component(width, height, color, x, y) {
+function simpleRect(width, height, color, x, y) {
   const ctx = myGameArea.context;
   ctx.fillStyle = color;
   ctx.fillRect(x, y, width, height);
@@ -242,14 +277,14 @@ function highlightSquare(space){
 function textBox(box, textColor, font, fontsize, textArray, outline = true, textborder = false) {
   const {width, height, color, x, y} = box;
   const ctx = myGameArea.context;
-  (outline) ? makeBoardRegion(width, height, color, x, y) : component(width, height, color, x, y);
+  (outline) ? makeBoardRegion(width, height, color, x, y) : simpleRect(width, height, color, x, y);
   let defaultFont = ctx.font;
   let defaultColor = ctx.fillStyle;
   ctx.font = String(fontsize) + "px " + font;
   ctx.fillStyle = textColor;
   ctx.textAlign = "center";
   textArray.forEach(function(text, idx){
-    ctx.fillText(text, (x + width / 2), (y + height / (textArray.length + 1) + fontsize / 3 + idx * fontsize * 2));
+    if (box.showText) ctx.fillText(text, (x + width / 2), (y + height / (textArray.length + 1) + fontsize / 3 + idx * fontsize * 2));
     if (textborder) ctx.strokeText(text, (x + width / 2), (y + height / 2 + fontsize / 3 + idx * fontsize));
   })
   ctx.font = defaultFont;
@@ -274,15 +309,41 @@ function drawPoly(offsetObj, coords, options = arrow.options){
 
 //FUNCTIONS THAT DRAW PIECES ON REGIONS
 
+//Draw a square on a region.  Centers on 50px / 50px box by default.
+//Options will take x, y to give specific offset.
+function addSquare(offsetObj, color, options = {}) {
+  let {width, height, x, y} = offsetObj;
+  if (options == {}) {
+    simpleRect(30, 30, color, space.x + 10, space.y + 10);
+    myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
+  }  else {
+    let {width, height, x, y} = options;
+    simpleRect(width, height, color, x, y);
+    myGameArea.context.strokeRect(x, y, width, height);
+  }
+}
+
+//Draw a circle on a region.  Centers on box by default.
+//Options will take x, y, radius to give specific offset.
+function addCircle(offsetObj, color, options = {}) {
+  let {width, height, x, y} = offsetObj;
+  if (options == {}) {
+    drawCircle(15, color, x + (width / 2), y + (height / 2));
+  } else {
+    let {radius, x, y} = options;
+    drawCircle(radius, color, x, y);
+  }
+}
+
 //Draw any piece, given a space and a piece-name.
 function drawAnyPiece(space, piece = ""){
   makeBoardRegion(50, 50, colors.lessLight, space.x, space.y);
-  component(48, 48, colors.lessLight, space.x + 1, space.y +1);
+  simpleRect(48, 48, colors.lessLight, space.x + 1, space.y +1);
   if (piece == "player_1Square"){
-    component(30, 30, colors.light, space.x + 10, space.y + 10);
+    simpleRect(30, 30, colors.light, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   } else if (piece == "player_2Square"){
-    component(30, 30, colors.dark, space.x + 10, space.y + 10);
+    simpleRect(30, 30, colors.dark, space.x + 10, space.y + 10);
     myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   } else if (piece == "player_1Round"){
     drawCircle(15, colors.light, space.x + 25, space.y + 25);
@@ -295,52 +356,78 @@ function drawAnyPiece(space, piece = ""){
   drawCenterLine();
 }
 
-//draw a red highlight around a piece to indicate anchor.
+//generate a number of standard squares in a row.
+//Added an option to first clear the region (without removing region.piece).
+function generateSquares(offsetObj, player, number, redraw = true) {
+  if (redraw) {
+    clear(offsetObj, false);
+  }
+  let {x, y} = offsetObj;
+  for (var i = 0; i < number; i++) {
+    let options = {}
+    options.height = 30;
+    options.width = 30;
+    options.color = (player == "player_1") ? colors.light : colors.dark;
+    options.x = x + 10 + (options.width + 10) * i;
+    options.y = y + 10;
+    addSquare(offsetObj, options.color, options);
+  }
+}
+
+//generate a number of standard circles in a row
+function generateCircles(offsetObj, player, number, redraw = true){
+  if (redraw) {
+    clear(offsetObj, false);
+  }
+  let {x, y} = offsetObj;
+  for (var i = 0; i < number; i++) {
+    let options = {}
+    options.radius = 15;
+    options.color = (player == "player_1") ? colors.light : colors.dark;
+    options.x = x + 10 + options.radius + (options.radius * 2 + 10) * i;
+    options.y = y + 10 + options.radius;
+    addCircle(offsetObj, options.color, options);
+  }
+}
+
+//draw a black highlight around a piece to indicate anchor.
 function addAnchor(space){
   const ctx = myGameArea.context;
   let defaultColor = ctx.strokeStyle;
+  if (anchorSquare) {
+    anchorSquare.hasAnchor = false;
+    updateSpace(anchorSquare);
+  }
   ctx.lineWidth = 5;
   ctx.strokeStyle = "black";
   ctx.strokeRect(space.x + 5, space.y + 5, space.width - 10, space.height -10);
   ctx.lineWidth = 1;
   ctx.strokeStyle = defaultColor;
-  if (anchorSquare) {
-    anchorSquare.hasAnchor = false;
-    updateSpace(anchorSquare);
-  }
   anchorSquare = space;
   space.hasAnchor = true;
 }
 
-//I need a better drawing function that just draws whatever is on the square
+//Redraws a space - whether it has a piece or not.
 function updateSpace(space) {
   if (!space.drawable){
     return "invalid space";
   }
   drawAnyPiece(space, space.piece);
 }
-//squares drawn on initial board seem to have fixed colors, rather than pointers
-//to a color object.  Drafting a refreshColors function to try to reset the counter.
-//TODO: It would be better if this function were unnecessary.
-function refreshColors(board) {
-  Object.values(board).forEach(function(value){console.log(value.color)});
-}
 
 //Redraw the board.
 function refreshBoard(board) {
-  // const ctx = myGameArea.context;
-  console.log("colors", colors);
-  console.log("window:", window);
-  component(canvas.width, canvas.height, colors.lessDark, 0, 0);
+  simpleRect(canvas.width, canvas.height, colors.lessDark, 0, 0);
   makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
   makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
   Object.values(board).forEach(function(space) {
     updateSpace(space);
-    if (space.text) {
-      // let defaultStyle = ctx.fillStyle;
+    if (space.text && space.drawable) {
       let textColor = (space.color == colors.dark || space.color == colors.lessDark) ? "white" : "black";
       textBox(space, textColor, "Arial", 18, space.text);
     }
+
+  if (turn.setup) populateReserves();
   });
 }
 
@@ -354,21 +441,6 @@ function drawCenterLine() {
   ctx.lineTo(249.5, 299.5);
   ctx.stroke();
   ctx.lineWidth = defaultLineWidth;
-}
-
-function drawBoard(board) {
-  for (var key of Object.keys(board)) {
-    if (board[key].drawable) {
-      makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
-    }
-  }
-  //Draw side boxes (walls)
-  makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
-  makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
-
-  //Add Special buttons (e.g. pushButton)
-  textBox(board.doneButton, colors.light, "Arial", 18, ["DONE"]);
-  textBox(board.skipButton, colors.light, "Arial", 18, ["SKIP"]);
 }
 
 //FUNCTIONS TO MANIPULATE PIECES
@@ -387,7 +459,7 @@ function move(startSpace, targetSpace, removePiece = true) {
   return "move complete.";
 }
 
-//FUNCTIONS TO EFFECT A PUSH
+//FUNCTIONS TO CAUSE A PUSH
 //This function handles special conditions for the beginning of a push,
 //then calls pushPiece to handle most of the work.
 function firstPush(space, direction, test = false) {
@@ -449,8 +521,58 @@ function pushPiece(space, direction, test = false) {
 }
 
 
-
 //CONTROLLER FUNCTIONS FOR GAME
+
+//Test whether a space is occupied
+let hasPiece = space => (space.piece) ? true: false;
+//Test whether a selected piece belongs to the current player
+let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false
+//detect a win
+let detectWin = () => (turn.winner) ? true : false;
+
+//take a space, hide it, refresh board separately.
+function hideSpace(space){
+  space.drawable = false;
+  if (space.width) space.oldWidth = space.width;
+  if (space.height) space.oldHeight = space.height;
+  space.width = 0;
+  space.height = 0;
+  space.piece = false;
+  if (space.text) space.showText = false;
+}
+
+function showSpace(space){
+  space.drawable = true;
+  if (space.oldWidth) space.width = space.oldWidth;
+  if (space.oldHeight) space.height = space.oldHeight;
+  if (space.text) space.showText = true;
+}
+
+//TODO: Use or remove this function. Right now it triggers on misclick during gameOver.
+function endTurn() {
+  console.log("Click reset to start new game.")
+}
+
+//Generate or reveal the reset tile on the board.  Then draw it.
+function addReset(){
+  if (board.reset) {
+    showSpace(board.reset);
+  } else {
+    let spaceExtras = {};
+    spaceExtras.name = "reset";
+    spaceExtras.text = [spaceExtras.name.toUpperCase()];
+    spaceExtras.width = 90;
+    spaceExtras.x = 279.5;
+    spaceExtras.y = 224.5;
+    addSpaceToBoard(board, spaceExtras.name, spaceExtras, defaultControl);
+  }
+  //Hide controls to prevent cross-clicking.
+  hideSpace(board.color);
+  hideSpace(board.skip);
+  hideSpace(board.done);
+  const reset = board.reset;
+  textBox(reset, reset.textColor, "Arial", reset.textSize, reset.text, true);
+}
 
 //Function to change active player
 function changePlayer() {
@@ -481,7 +603,6 @@ function advanceTurn() {
 
 //Check for no legal pushes win condition - to be called at the end of
 //advance turn to not require a click.
-//TODO: This function is buggy.  Getting false losses.
 function checkNoLegalPush() {
   const squaresArray = [];
   if (turn.phase == "push") {
@@ -502,30 +623,27 @@ function checkNoLegalPush() {
 
 }
 
-//Test whether a space is occupied
-let hasPiece = space => (space.piece) ? true: false;
-//Test whether a selected piece belongs to the current player
-let matchPiece = space => (turn.player == space.piece.slice(0,8)) ? true: false
-//detect a win
-let detectWin = () => (turn.winner) ? true : false;
 //Handle end game condition.
 function handleEndGame(winner, message = "") {
-  // component(canvas.width, canvas.height, colors.lessDark, 0, 0);
-  board.winner = {}
+  board.winner = {};
+  board.winner.showText = true;
   board.winner.color = colors.lessLight;
-  board.winner.x = 225.5;
+  board.winner.x = 210.5;
   board.winner.y = 100.5;
-  board.winner.width = 150;
-  board.winner.height = 80;
+  board.winner.width = 165;
+  board.winner.height = 90;
   board.winner.message = (turn.winner == "player_1")? ["Player 1 Wins!"] : ["Player 2 Wins!"];
   if (message) board.winner.message.push(message);
-  component(200, 150, colors.lessDark, 275.5, 100);
+  simpleRect(200, 350, colors.lessDark, 275.5, 100);
   textBox(board.winner, "black", "Arial", 18, board.winner.message);
-
+  //Hand setting phase to gameOver to try to cure post game end push bug.
+  turn.phase = "gameOver";
+  addReset();
 }
+
 //Handle game logic during a Move phase
 function handleMove(space) {
-  if (space.name == "skipButton") return skip();
+  if (space.name == "skip") return skip();
   if (!moveControl.space) {
     if (!matchPiece(space) || (!hasPiece(space))) return `Choose a tile with one of your pieces, ${turn.player}.`;
     highlightSquare(space);
@@ -550,9 +668,9 @@ function handleMove(space) {
     } else {
       return "You can only move pieces along empty paths."
     }
-
   }
 }
+
 //Skip buttom advances turn to push phase.
 function skip(){
   if (moveControl.space) {
@@ -617,11 +735,11 @@ function handlePush(space) {
       pushControl.clearArrows();
       pushControl.reset();
       if (detectWin()) {
-        // if message = "player_1 win"
         return handleEndGame(turn.winner, "Nice push!");
+      } else {
+        addAnchor(space);
+        advanceTurn();
       }
-      addAnchor(space);
-      advanceTurn();
       return message;
       //return message on illegal push.
     } else {
@@ -630,25 +748,26 @@ function handlePush(space) {
   }
 }
 
-//Handle game logic during endturn phase...maybe unnecessary?
-function endTurn() {
-  turn.phase = "Move1";
-  changePlayer();
-  return `${turn.player} player: begin turn!`
-}
 //Manage game.
 function handleGame(space) {
   if (space.name == "reset") {
     turn.setup = true;
     turn.player = "player_1";
     turn.phase = "move_1";
+    turn.winner = false;
     moveControl.space = false;
     Object.values(board).forEach(function(value){
-      if (parseInt(value.name[1])) value.piece = false;
-    })
+      if (value.placeable) value.piece = false;
+    });
+    //Handling showing the controls here.
+    hideSpace(board.reset);
+    showSpace(board.color);
+    showSpace(board.skip);
+    showSpace(board.done);
     addReserves();
-    startGame();
+    refreshBoard(board);
   }
+  if (space.name == "color") changeScheme();
   if (turn.setup) {
     handleSetup(space);
   } else if (turn.phase == "move1" || turn.phase == "move2") {
@@ -656,14 +775,15 @@ function handleGame(space) {
   } else if (turn.phase == "push") {
     handlePush(space);
   } else {
+    console.log("You hit endturn! Somehow...")
     endTurn();
   }
 }
-//Setup phase functions.
+
 //Manage setup.
 function handleSetup(space){
-  if (space.name == "doneButton") return resolveDone();
-  if (testReserve(space) && space.num < 1) return "No pieces left in that reserve.";
+  if (space.name == "done") return resolveDone();
+  if (testReserve(space) && space.num < 1) return "Reserve Empty";
   if (!moveControl.space) {
     if (!space.piece) return "Select a tile with one of your pieces.";
     if (!matchPiece(space)) return "You can only move your own pieces during setup.";
@@ -685,10 +805,13 @@ function handleSetup(space){
     moveControl.space = false;
     return message;
   } else {
-    return move(moveControl.space, space);
+    let message = move(moveControl.space, space);
+    moveControl.space = false;
+    return message;
   }
   return "Something weird happened.";
 }
+
 //Handle click of done button during setup.
 function resolveDone(){
   if (moveControl.space) return "Please finish your move or cancel it before ending your setup.";
@@ -700,31 +823,15 @@ function resolveDone(){
     return "Player 2: Place your Pieces.";
   } else {
     turn.setup = false;
-    //The next lines edit away the piece, width, and height attributes of the
-    //reserve squares so they aren't redrawn. This is a terrible way to handle it.
-    //TODO: Condense the following lines.  So far, delete is not a good option.
-    board[turn.player + "SquareReserve"].piece = "";
-    board[turn.player + "SquareReserve"].width = 0;
-    board[turn.player + "SquareReserve"].height = 0;
-    board[turn.player + "SquareReserve"].drawable = false;
-    board[turn.player + "RoundReserve"].piece = "";
-    board[turn.player + "RoundReserve"].width = 0;
-    board[turn.player + "RoundReserve"].height = 0;
-    board[turn.player + "RoundReserve"].drawable = false;
+    //Hide the reserve spaces during gameplay.
+    hideSpace(board.player_1SquareReserve);
+    hideSpace(board.player_1RoundReserve);
+    hideSpace(board.player_2SquareReserve);
+    hideSpace(board.player_2RoundReserve);
     changePlayer();
-    board[turn.player + "SquareReserve"].drawable = false;
-    board[turn.player + "SquareReserve"].piece = "";
-    board[turn.player + "SquareReserve"].width = 0;
-    board[turn.player + "SquareReserve"].height = 0;
-    board[turn.player + "RoundReserve"].piece = "";
-    board[turn.player + "RoundReserve"].width = 0;
-    board[turn.player + "RoundReserve"].height = 0;
-    board[turn.player + "RoundReserve"].drawable = false;
-    console.log("resoving refreshBoard.");
     refreshBoard(board);
     return "Player 1: you move first.";
   }
-
 }
 //Test whether a space is a reserve square.
 function testReserve(space){
@@ -741,7 +848,6 @@ function testLegalStartSquare(space){
   }
 }
 //Move piece from reserve to space; all error handling to be done in handleSetup.
-//TODO: Consider moving to piece manipulation section.
 function setupPiece(startSpace, targetSpace){
   drawAnyPiece(targetSpace, startSpace.piece);
   let piece = startSpace.piece.slice(8);
@@ -751,137 +857,96 @@ function setupPiece(startSpace, targetSpace){
   return "setupPiece complete.";
 }
 
-//CODE BLOCK TO GENERATE A COMPLETE BOARD OBJECT.  CONSIDER REFACTOR?
-
-//return an object with a sub-object for each square on a standard board
-function standardBoard(){
-  const board = {}
-
-  //define function to generate board edges
-  //TODO: Do I still need this?
-  function makeEdges(column, iter, name) {
-    try {
-      let adjacentSquare = columns[columns.indexOf(column) - 1] + iter.toString();
-      if (board[adjacentSquare]){
-        board[name].edges.push(adjacentSquare);
-        board[adjacentSquare].edges.push(name);
-      }
-    }
-    catch(error) {
-      console.log(name);
-      console.log(error);
-    }
-    finally {
-      try {
-        let adjacentSquare = column + (iter - 1).toString();
-        if (board[adjacentSquare]){
-          board[name].edges.push(adjacentSquare);
-          board[adjacentSquare].edges.push(name);
-        }
-      }
-      catch(error) {
-        console.log(error);
-      }
-    }
-
+// Add Pieces to setup boxes. - Plan is to run on initial draw and after every piece is first placed.
+function populateReserves(){
+  for (let i = 1; i < 3; i++){
+    let player = "player_" + i;
+    let square1 = board[player + "SquareReserve"];
+    let square2 = board[player + "RoundReserve"];
+    generateSquares(square1, player, square1.num);
+    generateCircles(square2, player, square2.num);
   }
-  //define function to make a column of the board
-  //Importantly, this function adds edges between adjacent squares.
-  function makeBoxesByColumn(column, topRow, bottomRow){
-    for (let i = topRow; i <= bottomRow; i++) {
-      let name = column + i.toString();
-      board[name] = {
-        width: 50,
-        height: 50,
-        color: colors.lessLight,
-        x: (columns.indexOf(column) * 50) + .5,
-        y: (i * 50 + 50) + .5,
-        name: name,
-        edges: [],
-        piece: "",
-        drawable: true,
-        pushable: true,
-        placeable: true,
-        endgame: false,
-        hasAnchor: false
-      }
-      makeEdges(column, i, name);
-    }
-  }
-  /* I've added columns and rows to surround the playable area
-  as part of the board creation process...mostly to simplify the
-  creation of edges.  Below, I'm going to edit all the boarder times
-  to set them to undrawable and unplacable, and to variously edit their pushable
-  and endgame conditions. I'm also going to set their height and width to zero,
-  to make them unclickable.  I'm doing all this to create end destinations
-  for a push command.
-  */
-  makeBoxesByColumn("a", 2, 6);
-  makeBoxesByColumn("b", 1, 8);
-  makeBoxesByColumn("c", 0, 9);
-  makeBoxesByColumn("d", 0, 9);
-  makeBoxesByColumn("e", 1, 8);
-  makeBoxesByColumn("f", 3, 7);
+}
 
-  //set details for boarder tiles.  Consider refactor into functions.
-  for ( let item of borderTiles) {
-    board[item].height = 0;
-    board[item].width = 0;
-    board[item].drawable = false;
+//FUNCTIONS FOR BOARD generation
+
+//generate space object, add it to the board, takes string with name, an object with params,
+//and a second object (for modifying a template object).
+function addSpaceToBoard(board, name, extras = false, options = defaultSpace) {
+  let thisSpace = {};
+  Object.entries(options).forEach(([key, value]) => thisSpace[key] = value);
+  thisSpace["name"] = name;
+  if (extras) Object.entries(extras).forEach(([key, value]) => thisSpace[key] = value);
+  board[name] = thisSpace;
+  return board[name];
+}
+
+//Supposed to make a square for every playable square on the board.
+function addPlayableSpaces(board, spaceObject) {
+  Object.entries(spaceObject).forEach(function([key, value]){
+    for (var i = value[0]; i <= value[1]; i++){
+      let name1 = key + i.toString();
+      let extras1 = {
+        x: (columns.indexOf(key) * 50) + .5,
+        y: i * 50 + 50 + .5
+      }
+      addSpaceToBoard(board, name1, extras1);
+    }
+  });
+  Object.values(board).forEach((value) => addFourSides(board, value));
+  borderTiles.forEach(function(item){
+    hideSpace(board[item]);
     board[item].placeable = false;
-    if (item[0] == "a" || item[0] == "f") {
+    if (["a","f"].includes(item[0])) {
       board[item].pushable = false;
     } else {
       board[item].endgame = true;
     }
-  }
-  console.log("board: ", board);
-
+  });
   return board;
 }
 
-/* TODO: The following functions are used for initial board setup.
-They should probably be reorganized. */
-
-//adding a function to create 1-off special squares
-function addSpecialSquares(board){
-  const doneButton1 = {
-    width: 60,
-    height: 50,
-    color: colors.dark,
-    x: 295.5,
-    y: 100.5,
-    name: "doneButton",
-    edges: [],
-    piece: "",
-    drawable: true,
-    pushable: false,
-    placeable: false,
-    endgame: false,
-    hasAnchor: false,
-    text: ["DONE"]
+//Generate directional edges for a space without space.edges array.
+function addFourSides(board, space){
+  let column = space.name[0];
+  let row = parseInt(space.name[1]);
+  let newName = column + String(row - 1);
+  space.up = (Object.keys(board).includes(newName) ? board[newName] : false)
+  newName = column + String(row + 1);
+  space.down = (Object.keys(board).includes(newName) ? board[newName] : false)
+  if (column != "a"){
+    newName = columns[columns.indexOf(column) - 1] + String(row);
+    space.left = (Object.keys(board).includes(newName) ? board[newName] : false)
+  } else {
+    space.left = false;
   }
-  board.doneButton = doneButton1;
-  const skipButton = {
-    width: 60,
-    height: 50,
-    color: colors.dark,
-    x: 295.5,
-    y: 180.5,
-    name: "skipButton",
-    edges: [],
-    piece: "",
-    drawable: true,
-    pushable: false,
-    placeable: false,
-    endgame: false,
-    hasAnchor: false,
-    text: ["SKIP"]
+  if (column != "f"){
+    newName = columns[columns.indexOf(column) + 1] + String(row);
+    space.right = (Object.keys(board).includes(newName) ? board[newName] : false)
+  } else {
+    space.right = false;
   }
-  board.skipButton = skipButton;
 }
 
-//simpler function that shaves down unnecessary makePieceReserve complexity.
+//return an object with a sub-object for each square on a standard board,
+//plus skip and done boxes.  Piece reserves come from addReserves.
+function standardBoard(){
+  console.log("In standardBoard")
+  let board = {};
+  const nameArray = ["done", "skip", "color"];
+  board = addPlayableSpaces(board, boardSpaces);
+  nameArray.forEach(function(name, idx){
+    let spaceExtras = {};
+    spaceExtras.name = name;
+    spaceExtras.text = [name.toUpperCase()];
+    spaceExtras.width = 80;
+    spaceExtras.x = 295.5;
+    spaceExtras.y = 200.5 + 80 * idx;
+    addSpaceToBoard(board, spaceExtras.name, spaceExtras, defaultControl);
+  });
+  return board;
+}
+
 //Generate reserve spaces in the board object.  Drawn with populateReserves().
 function addReserves(){
   let space = {};
@@ -921,126 +986,7 @@ function addReserves(){
   board[space4.name] = space4;
 }
 
-/* Add Pieces to setup boxes. - Plan is to run on initial draw and after every piece is first placed.
-TODO: Reorganize these functions in the file.  PopulateReserves is really a setup handler helper function.
-the drawing functions should go with the other drawing functions, I imagine.
-TODO: Maybe refactor other functions to use addSquare and addCircle...Hide obnoxious
-component and strokeRect pattern.  */
-
-function populateReserves(){
-  for (let i = 1; i < 3; i++){
-    let player = "player_" + i;
-    let square1 = board[player + "SquareReserve"];
-    let square2 = board[player + "RoundReserve"];
-    generateSquares(square1, player, square1.num);
-    generateCircles(square2, player, square2.num);
-  }
-}
-//Draw a square on a region.  Centers on 50px / 50px box by default.
-//Options will take x, y to give specific offset.
-function addSquare(offsetObj, color, options = {}) {
-  let {width, height, x, y} = offsetObj;
-  if (options == {}) {
-    component(30, 30, color, space.x + 10, space.y + 10);
-    myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
-  }  else {
-    let {width, height, x, y} = options;
-    component(width, height, color, x, y);
-    myGameArea.context.strokeRect(x, y, width, height);
-  }
-}
-
-function addReset(){
-  let resetButton = {};
-  resetButton.height = 125;
-  resetButton.width = 100;
-  resetButton.x = 299.5;
-  resetButton.y = 299.5;
-  resetButton.color = colors.dark;
-  resetButton.text = ["RESET"];
-  resetButton.name = "reset";
-  resetButton.textColor = "white";
-  resetButton.piece = false;
-  resetButton.drawable = false;
-  resetButton.pushable = false;
-  resetButton.placeable = false;
-  board[resetButton.name] = resetButton;
-  let reset = board.reset;
-
-  textBox(reset, reset.textColor, "Arial", 24, reset.text);
-}
-
-//Draw a circle on a region.  Centers on box by default.
-//Options will take x, y, radius to give specific offset.
-function addCircle(offsetObj, color, options = {}) {
-  let {width, height, x, y} = offsetObj;
-  if (options == {}) {
-    drawCircle(15, color, x + (width / 2), y + (height / 2));
-  } else {
-    let {radius, x, y} = options;
-    drawCircle(radius, color, x, y);
-  }
-}
-
-//generate a number of standard squares in a row.
-//Added an option to first clear the region (without removing region.piece).
-function generateSquares(offsetObj, player, number, redraw = true) {
-  if (redraw) {
-    clear(offsetObj, false);
-  }
-  let {x, y} = offsetObj;
-  for (var i = 0; i < number; i++) {
-    let options = {}
-    options.height = 30;
-    options.width = 30;
-    options.color = (player == "player_1") ? colors.light : colors.dark;
-    options.x = x + 10 + (options.width + 10) * i;
-    options.y = y + 10;
-    addSquare(offsetObj, options.color, options);
-  }
-}
-
-//generate a number of standard circles in a row
-function generateCircles(offsetObj, player, number, redraw = true){
-  if (redraw) {
-    clear(offsetObj, false);
-  }
-  let {x, y} = offsetObj;
-  for (var i = 0; i < number; i++) {
-    let options = {}
-    options.radius = 15;
-    options.color = (player == "player_1") ? colors.light : colors.dark;
-    options.x = x + 10 + options.radius + (options.radius * 2 + 10) * i;
-    options.y = y + 10 + options.radius;
-    addCircle(offsetObj, options.color, options);
-  }
-}
-//writing a single function to add up, down, left, and right properties to squares.
-function addSides(square){
-  let column = square.name[0];;
-  let row = parseInt(square.name[1]);
-  let newName = column + String(row - 1);
-  square.up = (square.edges.includes(newName) ? board[newName] : false)
-  newName = column + String(row + 1);
-  square.down = (square.edges.includes(newName) ? board[newName] : false)
-  if (column != "a"){
-    newName = columns[columns.indexOf(column) - 1] + String(row);
-    square.left = (square.edges.includes(newName) ? board[newName] : false)
-  } else {
-    square.left = false;
-  }
-  if (column != "f"){
-    newName = columns[columns.indexOf(column) + 1] + String(row);
-    square.right = (square.edges.includes(newName) ? board[newName] : false)
-  } else {
-    square.right = false;
-  }
-}
-
-//Run addSides on all board spaces.
-function addSidesToBoard(board){
-  Object.values(board).forEach((square) => addSides(square));
-}
+//FUNCTIONS TO CREATE TEST CONDITIONS
 
 //generates a Sample board for testing.
 function makeTestBoard(board){
@@ -1054,7 +1000,13 @@ function makeTestBoard(board){
   drawAnyPiece(board.d5, "player_2Round");
   drawAnyPiece(board.d6, "player_2Square");
   drawAnyPiece(board.e5, "player_2Square");
-  turn.setup = false;
+  if (turn.setup) {
+    turn.player = "player_2";
+    Object.values(board).forEach(function(value){
+      if (value.name.slice(0, 6) == "player") value.num = 0;
+    })
+  }
+  resolveDone();
 }
 
 //fake a player_1 win for testing.
@@ -1075,32 +1027,14 @@ function player_2Win(board){
   turn.phase = "push";
 }
 
+
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
 function startGame() {
   myGameArea.start();
   //Draw Background
-  component(canvas.width, canvas.height, colors.lessDark, 0, 0);
-  drawBoard(board);
-  populateReserves();
-
-  //Generate drawn squares for playable squares on the board.
-  // for (var key of Object.keys(board)) {
-  //   if (board[key].drawable) {
-  //     makeBoardRegion(board[key].width, board[key].height, board[key].color, board[key].x, board[key].y, board[key].name);
-  //   }
-  // }
-  // //Draw side boxes (walls)
-  // makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
-  // makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
-  //
-  // //Add Special buttons (e.g. pushButton)
-  // textBox(board.doneButton, "#FEFEFE", "Arial", 18, ["DONE"]);
-  // textBox(board.skipButton, "#FEFEFE", "Arial", 18, ["SKIP"]);
-  //Add setup regions and pieces to reserves.
-
+  simpleRect(canvas.width, canvas.height, colors.lessDark, 0, 0);
+  refreshBoard(board);
 }
-
-
 
 
 //EVENT LISTENERS AND EVENT LISTENER HELPER FUNCTIONS
@@ -1128,6 +1062,7 @@ canvas.addEventListener('click', (e) => {
     };
   }
   if (!space) console.log("outside clickable region");
+  if (!space) console.log("clicked on:", point);
   if (space) {
     console.log("space: ", space);
     handleGame(space);
