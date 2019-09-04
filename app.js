@@ -430,27 +430,37 @@ function updateSpace(space) {
 //Redraw the board.
 function refreshBoard(board) {
   simpleRect(canvas.width, canvas.height, colors.lessDark, 0, 0);
-  makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
-  makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
+  drawWalls();
+  // makeBoardRegion(15, 252, colors.dark, 35.5, 149.5);
+  // makeBoardRegion(15, 252, colors.dark, 250.5, 199.5);
   Object.values(board).forEach(function(space) {
     updateSpace(space);
     if (space.text && space.drawable) {
       let textColor = (space.color == colors.dark || space.color == colors.lessDark) ? "white" : "black";
-      textBox(space, textColor, "Arial", 18, space.text);
+      textBox(space, space.textColor, space.font, space.textSize, space.text);
     }
 
   if (turn.setup) populateReserves();
   });
 }
 
+//draw the walls
+function drawWalls(){
+  makeBoardRegion(15 * scale, board.b6.y + board.b6.height - board.b2.y, colors.dark, board.b2.x - 15 * scale, board.b2.y);
+  makeBoardRegion(15 * scale, board.e7.y + board.e7.height - board.e3.y, colors.dark, board.e3.x + board.e3.width, board.e3.y);
+}
+
 //Draw wider center line between row 4 and 5.  Probably redraw it all the time.
 function drawCenterLine() {
   const ctx = myGameArea.context;
   const defaultLineWidth = ctx.lineWidth;
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 5 * scale;
   ctx.beginPath();
-  ctx.moveTo(49.5, 299.5);
-  ctx.lineTo(249.5, 299.5);
+  // ctx.moveTo(49.5 * scale, 299.5 * scale);
+  // ctx.lineTo(249.5 * scale, 299.5 * scale);
+  //trying alternate calc method
+  ctx.moveTo(board.b5.x, board.b5.y);
+  ctx.lineTo(board.e5.x + board.e5.width, board.e5.y);
   ctx.stroke();
   ctx.lineWidth = defaultLineWidth;
 }
