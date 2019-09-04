@@ -53,10 +53,11 @@ const ctx = canvas.getContext('2d');
 var myGameArea = {
   canvas : document.getElementById("canvas"),
   start : function() {
-    this.canvas.width = window.innerWidth;
-    // this.canvas.width = holder.width;
-    this.canvas.height = window.innerHeight;
+    // this.canvas.width = window.innerWidth;
+    this.canvas.width = 400;
+    // this.canvas.height = window.innerHeight;
     // this.canvas.height = (holder.height) ? holder.height : "600px";
+    this.canvas.height = 600;
     this.context = this.canvas.getContext("2d");
     // document.body.insertBefore(this.canvas, document.body.childNodes[0]);
   }
@@ -184,6 +185,8 @@ const defaultControl = {
 //generate Board object with nodes and edges.
 const board = standardBoard();
 addReserves();
+const defaultBoard = {};
+Object.entries(board).forEach(([key, value]) => defaultBoard[key] = value);
 
 
 /* Change color scheme.  Takes an object with a format similar to the color
@@ -1064,9 +1067,11 @@ function resizeCanvas(){
   tmpCtx.drawImage(canvas, 0 , 0);
 
   //Resize original
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-
+  let currentCanvas = document.getElementById('canvas');
+  // canvas.innerWidth = window.innerWidth;
+  // canvas.height = window.innerHeight;
+  canvas.width = currentCanvas.width;
+  canvas.height = currentCanvas.height;
   //Copy back to resized canvasInit
   // ctx = canvas.getContext('2d');
   ctx.webkitImageSmoothingEnabled = false;

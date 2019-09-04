@@ -7,12 +7,18 @@
         height: 54px;
     }
 } */
-@media (min-width: 400px) {
+/* @media (min-width: 400px) {
   #canvas {
-    /* width: 100%; */
+  width: 400;
+  height: 600;
   }
+} */
+
+#canvas {
+width: 400;
+height: 600;
 }
 
-#canvas-holder {
+/* #canvas-holder {
   width: 100%;
-}
+} */
