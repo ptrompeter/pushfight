@@ -44,6 +44,8 @@ const scuba = {
 }
 
 let colors = harbor;
+//define scale variable, to be used in board rescaling.
+let scale = 1;
 
 //Canvas variables.
 const holder = document.getElementById("game-column");
@@ -165,7 +167,9 @@ const defaultSpace = {
         pushable: true,
         placeable: true,
         endgame: false,
-        hasAnchor: false
+        hasAnchor: false,
+        oldWidth: 50,
+        oldHeight: 50
       }
 
 const defaultControl = {
@@ -179,6 +183,8 @@ const defaultControl = {
         textSize: 18,
         textColor: "white",
         showText: true,
+        oldWidth: 50,
+        oldHeight: 50
       }
 
 
@@ -626,17 +632,6 @@ function checkNoLegalPush() {
 
 //Handle end game condition.
 function handleEndGame(winner, message = "") {
-  // board.winner = {};
-  // board.winner.showText = true;
-  // board.winner.color = colors.lessLight;
-  // board.winner.x = 210.5;
-  // board.winner.y = 100.5;
-  // board.winner.width = 165;
-  // board.winner.height = 90;
-  // board.winner.message = (turn.winner == "player_1")? ["Player 1 Wins!"] : ["Player 2 Wins!"];
-  // if (message) board.winner.message.push(message);
-  // simpleRect(200, 350, colors.lessDark, 275.5, 100);
-  // textBox(board.winner, "black", "Arial", 18, board.winner.message);
   //Hand setting phase to gameOver to try to cure post game end push bug.
   turn.phase = "gameOver";
   showSpace(board.winner);
@@ -1075,35 +1070,67 @@ function canvasInit() {
   // canvas = document.getElementById('canvas');
   if (canvas.getContext) {
     // ctx = canvas.getContext("2d");
-    window.addEventListener('resize', resizeCanvas, false);
-    window.addEventListener('orientationchange', resizeCanvas, false);
-    resizeCanvas();
+    window.addEventListener('resize', resize, false);
+    window.addEventListener('orientationchange', resize, false);
+    resize();
   }
 }
 
-function resizeCanvas(){
-  //make a temporary canvas to save data during rescale.
-  let tmpCanvas = document.createElement('canvas');
-  tmpCanvas.width = canvas.width;
-  tmpCanvas.height = canvas.height;
-  let tmpCtx = tmpCanvas.getContext('2d')
+// function resizeCanvas(){
+//   //make a temporary canvas to save data during rescale.
+//   let tmpCanvas = document.createElement('canvas');
+//   tmpCanvas.width = canvas.width;
+//   tmpCanvas.height = canvas.height;
+//   let tmpCtx = tmpCanvas.getContext('2d')
+//
+//   //Copy data from main game to temporary canvas
+//   tmpCtx.drawImage(canvas, 0 , 0);
+//
+//   //Resize original
+//   let currentCanvas = document.getElementById('canvas');
+//   // canvas.innerWidth = window.innerWidth;
+//   // canvas.height = window.innerHeight;
+//   canvas.width = currentCanvas.width;
+//   canvas.height = currentCanvas.height;
+//   //Copy back to resized canvasInit
+//   // ctx = canvas.getContext('2d');
+//   ctx.webkitImageSmoothingEnabled = false;
+//   ctx.mozImageSmoothingEnabled = false;
+//   ctx.imageSmoothingEnabled = false;
+//   ctx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height, 0, 0, canvas.width, canvas.height);
+//   refreshBoard(board);
+// }
 
-  //Copy data from main game to temporary canvas
-  tmpCtx.drawImage(canvas, 0 , 0);
-
-  //Resize original
-  let currentCanvas = document.getElementById('canvas');
-  // canvas.innerWidth = window.innerWidth;
-  // canvas.height = window.innerHeight;
-  canvas.width = currentCanvas.width;
-  canvas.height = currentCanvas.height;
-  //Copy back to resized canvasInit
-  // ctx = canvas.getContext('2d');
-  ctx.webkitImageSmoothingEnabled = false;
-  ctx.mozImageSmoothingEnabled = false;
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height, 0, 0, canvas.width, canvas.height);
+function resize(){
+  //get relative scales of box and canvas.
+  let scaleObj = getScale();
+  //set scale variable to absolute scale relative to 400 to correct for piece drawings.
+  scale = scaleObj.absScale
+  //rescale board coordinates with relative scale
+  resizeBoard(scaleObj.relScale);
+  //resize canvas with relative scale
+  canvas.width *= scaleObj.relScale
+  canvas.height *= scaleObj.relScale
+  //redraw board
   refreshBoard(board);
+}
+
+function resizeBoard(scale){
+  let attrArray = ["x", "y", "width", "height", "oldWidth", "oldHeight"]
+  Object.values(board).forEach(function(value){
+    attrArray.forEach((str) => value[str] *= scale);
+    if (value.textSize) value.textSize *= scale;
+  });
+}
+
+//get the ratio of new window to default and current scales
+function getScale(){
+  const column = document.getElementById("game-column");
+  const bb = column.getBoundingClientRect();
+  let width = bb.right - bb.left;
+  let absScale = width / 400;
+  let relScale = width / canvas.width;
+  return {absScale: absScale, relScale: relScale}
 }
 
 //adding a function to detect intersection between a click and my boxes
