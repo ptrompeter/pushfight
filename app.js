@@ -313,7 +313,7 @@ function drawPoly(offsetObj, coords, options = arrow.options){
   ctx.fillStyle = options.fillStyle;
   ctx.strokeStyle = options.strokeStyle;
   ctx.beginPath();
-  coords.forEach((pair) => ctx.lineTo(pair[0] + x, pair[1] + y));
+  coords.forEach((pair) => ctx.lineTo(pair[0] * scale + x, pair[1] * scale + y));
   ctx.closePath();
   (options.fill) ? ctx.fill() : {};
   (options.stroke) ? ctx.stroke() : {};
