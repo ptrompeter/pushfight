@@ -46,6 +46,7 @@ const scuba = {
 let colors = harbor;
 
 //Canvas variables.
+const holder = document.getElementById("game-column");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext('2d');
 //myGameArea is the variable that holds the context for the canvas element.
@@ -53,7 +54,9 @@ var myGameArea = {
   canvas : document.getElementById("canvas"),
   start : function() {
     this.canvas.width = window.innerWidth;
+    this.canvas.width = holder.width;
     this.canvas.height = window.innerHeight;
+    // this.canvas.height = (holder.height) ? holder.height : "600px";
     this.context = this.canvas.getContext("2d");
     // document.body.insertBefore(this.canvas, document.body.childNodes[0]);
   }
@@ -1039,6 +1042,40 @@ function startGame() {
 
 //EVENT LISTENERS AND EVENT LISTENER HELPER FUNCTIONS
 
+//adding functions to redraw canvas for responsiveness.
+function canvasInit() {
+  // canvas = document.getElementById('canvas');
+  if (canvas.getContext) {
+    // ctx = canvas.getContext("2d");
+    window.addEventListener('resize', resizeCanvas, false);
+    window.addEventListener('orientationchange', resizeCanvas, false);
+    resizeCanvas();
+  }
+}
+
+function resizeCanvas(){
+  //make a temporary canvas to save data during rescale.
+  let tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = canvas.width;
+  tmpCanvas.height = canvas.height;
+  let tmpCtx = tmpCanvas.getContext('2d')
+
+  //Copy data from main game to temporary canvas
+  tmpCtx.drawImage(canvas, 0 , 0);
+
+  //Resize original
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  //Copy back to resized canvasInit
+  // ctx = canvas.getContext('2d');
+  ctx.webkitImageSmoothingEnabled = false;
+  ctx.mozImageSmoothingEnabled = false;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height, 0, 0, canvas.width, canvas.height);
+  refreshBoard(board);
+}
+
 //adding a function to detect intersection between a click and my boxes
 function isIntersect(point, box) {
   if (box.x <= point.x && point.x <= (box.x + box.width) && box.y <= point.y && point.y <= (box.y + box.height)){
@@ -1071,3 +1108,4 @@ canvas.addEventListener('click', (e) => {
 
 //Adding a call to start the game on page load.
 startGame();
+canvasInit();

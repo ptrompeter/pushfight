@@ -9,6 +9,10 @@
 } */
 @media (min-width: 400px) {
   #canvas {
-    width: 100%;
+    /* width: 100%; */
   }
+}
+
+#canvas-holder {
+  width: 100%;
 }
