@@ -377,11 +377,11 @@ function generateSquares(offsetObj, player, number, redraw = true) {
   let {x, y} = offsetObj;
   for (var i = 0; i < number; i++) {
     let options = {}
-    options.height = 30;
-    options.width = 30;
+    options.height = 30 * scale;
+    options.width = 30 * scale;
     options.color = (player == "player_1") ? colors.light : colors.dark;
-    options.x = x + 10 + (options.width + 10) * i;
-    options.y = y + 10;
+    options.x = x + 10 * scale + (options.width + 10 * scale) * i;
+    options.y = y + 10 * scale;
     addSquare(offsetObj, options.color, options);
   }
 }
@@ -394,10 +394,10 @@ function generateCircles(offsetObj, player, number, redraw = true){
   let {x, y} = offsetObj;
   for (var i = 0; i < number; i++) {
     let options = {}
-    options.radius = 15;
+    options.radius = 15 * scale;
     options.color = (player == "player_1") ? colors.light : colors.dark;
-    options.x = x + 10 + options.radius + (options.radius * 2 + 10) * i;
-    options.y = y + 10 + options.radius;
+    options.x = x + 10 * scale + options.radius + (options.radius * 2 + 10 * scale) * i;
+    options.y = y + 10 * scale + options.radius;
     addCircle(offsetObj, options.color, options);
   }
 }
