@@ -349,18 +349,18 @@ function addCircle(offsetObj, color, options = {}) {
 
 //Draw any piece, given a space and a piece-name.
 function drawAnyPiece(space, piece = ""){
-  makeBoardRegion(50, 50, colors.lessLight, space.x, space.y);
-  simpleRect(48, 48, colors.lessLight, space.x + 1, space.y +1);
+  makeBoardRegion(50 * scale, 50 * scale, colors.lessLight, space.x, space.y);
+  simpleRect(50 * scale -2, 50 * scale -2, colors.lessLight, space.x + 1, space.y +1);
   if (piece == "player_1Square"){
-    simpleRect(30, 30, colors.light, space.x + 10, space.y + 10);
-    myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
+    simpleRect(30 * scale, 30 * scale, colors.light, space.x + 10 * scale, space.y + 10 * scale);
+    myGameArea.context.strokeRect(space.x + 10 * scale, space.y + 10 * scale, 30 * scale, 30 * scale);
   } else if (piece == "player_2Square"){
-    simpleRect(30, 30, colors.dark, space.x + 10, space.y + 10);
-    myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
+    simpleRect(30 * scale, 30 * scale, colors.dark, space.x + 10 * scale, space.y + 10 * scale);
+    myGameArea.context.strokeRect(space.x + 10 * scale, space.y + 10 * scale, 30 * scale, 30 * scale);
   } else if (piece == "player_1Round"){
-    drawCircle(15, colors.light, space.x + 25, space.y + 25);
+    drawCircle(15 * scale, colors.light, space.x + 25 * scale, space.y + 25 * scale);
   } else if (piece == "player_2Round"){
-    drawCircle(15, colors.dark, space.x + 25, space.y + 25);
+    drawCircle(15 * scale, colors.dark, space.x + 25 * scale, space.y + 25 * scale);
   } else {
     clear(space);
   }
@@ -1076,31 +1076,6 @@ function canvasInit() {
   }
 }
 
-// function resizeCanvas(){
-//   //make a temporary canvas to save data during rescale.
-//   let tmpCanvas = document.createElement('canvas');
-//   tmpCanvas.width = canvas.width;
-//   tmpCanvas.height = canvas.height;
-//   let tmpCtx = tmpCanvas.getContext('2d')
-//
-//   //Copy data from main game to temporary canvas
-//   tmpCtx.drawImage(canvas, 0 , 0);
-//
-//   //Resize original
-//   let currentCanvas = document.getElementById('canvas');
-//   // canvas.innerWidth = window.innerWidth;
-//   // canvas.height = window.innerHeight;
-//   canvas.width = currentCanvas.width;
-//   canvas.height = currentCanvas.height;
-//   //Copy back to resized canvasInit
-//   // ctx = canvas.getContext('2d');
-//   ctx.webkitImageSmoothingEnabled = false;
-//   ctx.mozImageSmoothingEnabled = false;
-//   ctx.imageSmoothingEnabled = false;
-//   ctx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height, 0, 0, canvas.width, canvas.height);
-//   refreshBoard(board);
-// }
-
 function resize(){
   //get relative scales of box and canvas.
   let scaleObj = getScale();
@@ -1145,9 +1120,10 @@ function isIntersect(point, box) {
 //adding a canvas event listener that can respond to clicking on boxes
 canvas.addEventListener('click', (e) => {
   let space = "";
+  let canvasPos = canvas.getBoundingClientRect();
   const point = {
-    x: e.clientX - canvas.offsetLeft,
-    y: e.clientY - canvas.offsetTop
+    x: e.clientX - canvasPos.x,
+    y: e.clientY - canvasPos.y
   };
   for (var box of Object.values(board)) {
     space = isIntersect(point, box);
