@@ -559,25 +559,20 @@ function endTurn() {
   console.log("Click reset to start new game.")
 }
 
-//Generate or reveal the reset tile on the board.  Then draw it.
+//Generate or reveal the reset tile on the board.  Draw seperately.
 function addReset(){
-  if (board.reset) {
-    showSpace(board.reset);
-  } else {
-    let spaceExtras = {};
-    spaceExtras.name = "reset";
-    spaceExtras.text = [spaceExtras.name.toUpperCase()];
-    spaceExtras.width = 90;
-    spaceExtras.x = 279.5;
-    spaceExtras.y = 224.5;
-    addSpaceToBoard(board, spaceExtras.name, spaceExtras, defaultControl);
-  }
-  //Hide controls to prevent cross-clicking.
+  showSpace(board.reset);
   hideSpace(board.color);
   hideSpace(board.skip);
   hideSpace(board.done);
-  const reset = board.reset;
-  textBox(reset, reset.textColor, "Arial", reset.textSize, reset.text, true);
+}
+
+//Hide reset, show controls. Draw seperately.
+function showControls(){
+  hideSpace(board.reset);
+  showSpace(board.color);
+  showSpace(board.skip);
+  showSpace(board.done);
 }
 
 //Function to change active player
@@ -631,20 +626,24 @@ function checkNoLegalPush() {
 
 //Handle end game condition.
 function handleEndGame(winner, message = "") {
-  board.winner = {};
-  board.winner.showText = true;
-  board.winner.color = colors.lessLight;
-  board.winner.x = 210.5;
-  board.winner.y = 100.5;
-  board.winner.width = 165;
-  board.winner.height = 90;
-  board.winner.message = (turn.winner == "player_1")? ["Player 1 Wins!"] : ["Player 2 Wins!"];
-  if (message) board.winner.message.push(message);
-  simpleRect(200, 350, colors.lessDark, 275.5, 100);
-  textBox(board.winner, "black", "Arial", 18, board.winner.message);
+  // board.winner = {};
+  // board.winner.showText = true;
+  // board.winner.color = colors.lessLight;
+  // board.winner.x = 210.5;
+  // board.winner.y = 100.5;
+  // board.winner.width = 165;
+  // board.winner.height = 90;
+  // board.winner.message = (turn.winner == "player_1")? ["Player 1 Wins!"] : ["Player 2 Wins!"];
+  // if (message) board.winner.message.push(message);
+  // simpleRect(200, 350, colors.lessDark, 275.5, 100);
+  // textBox(board.winner, "black", "Arial", 18, board.winner.message);
   //Hand setting phase to gameOver to try to cure post game end push bug.
   turn.phase = "gameOver";
+  showSpace(board.winner);
+  board.winner.getText();
+  if (message) board.winner.text.push(message);
   addReset();
+  refreshBoard(board);
 }
 
 //Handle game logic during a Move phase
@@ -766,10 +765,8 @@ function handleGame(space) {
       if (value.placeable) value.piece = false;
     });
     //Handling showing the controls here.
-    hideSpace(board.reset);
-    showSpace(board.color);
-    showSpace(board.skip);
-    showSpace(board.done);
+    showControls();
+    hideSpace(board.winner);
     addReserves();
     refreshBoard(board);
   }
@@ -950,6 +947,34 @@ function standardBoard(){
     spaceExtras.y = 200.5 + 80 * idx;
     addSpaceToBoard(board, spaceExtras.name, spaceExtras, defaultControl);
   });
+  //add a reset button, then hide it.
+  let spaceExtras = {};
+  spaceExtras.name = "reset";
+  spaceExtras.text = [spaceExtras.name.toUpperCase()];
+  spaceExtras.width = 90;
+  spaceExtras.x = 279.5;
+  spaceExtras.y = 224.5;
+  addSpaceToBoard(board, spaceExtras.name, spaceExtras, defaultControl);
+  hideSpace(board.reset);
+
+  //add a winner box, then hide it.
+  let winExtras = {};
+  winExtras.name = "winner";
+  winExtras.showText = true;
+  winExtras.color = colors.lessLight;
+  winExtras.x = 210.5;
+  winExtras.y = 100.5;
+  winExtras.width = 165;
+  winExtras.height = 90;
+  winExtras.textColor = "black";
+  winExtras.text = []
+  winExtras.getText = function() {
+    if (turn.winner) {
+      this.text = (turn.winner == "player_1") ? ["Player 1 Wins!"] : ["Player 2 Wins!"];
+    }
+  }
+  addSpaceToBoard(board, winExtras.name, winExtras, defaultControl);
+  hideSpace(board.winner);
   return board;
 }
 
