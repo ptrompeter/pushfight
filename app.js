@@ -54,7 +54,7 @@ var myGameArea = {
   canvas : document.getElementById("canvas"),
   start : function() {
     this.canvas.width = window.innerWidth;
-    this.canvas.width = holder.width;
+    // this.canvas.width = holder.width;
     this.canvas.height = window.innerHeight;
     // this.canvas.height = (holder.height) ? holder.height : "600px";
     this.context = this.canvas.getContext("2d");
