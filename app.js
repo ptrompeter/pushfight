@@ -441,6 +441,8 @@ function refreshBoard(board) {
     }
 
   if (turn.setup) populateReserves();
+  if (anchorSquare) addAnchor(anchorSquare);
+  if (moveControl.space) highlightSquare(moveControl.space);
   });
 }
 
