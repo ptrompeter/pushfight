@@ -14,5 +14,9 @@
   }
 } */
 #long-rules {
+  padding-top: 15px;
   opacity: 1;
+}
+#short-rules {
+  padding-top: 15px;
 }

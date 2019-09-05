@@ -51,6 +51,7 @@ let scale = 1;
 const holder = document.getElementById("game-column");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext('2d');
+const $body = $("body");
 //myGameArea is the variable that holds the context for the canvas element.
 var myGameArea = {
   canvas : document.getElementById("canvas"),
@@ -228,6 +229,8 @@ function changeScheme(colorObj = false, colorStr = false) {
     value.color = (value.text) ? colors.dark : colors.lessLight;
   })
   refreshBoard(board);
+  //match background color:
+  $body.css({"background-color": colors.lessDark});
   if (anchorSquare) addAnchor(anchorSquare);
   populateReserves();
   if (moveControl.space) highlightSquare(moveControl.space);

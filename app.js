@@ -7,6 +7,7 @@ $( document ).ready(function() {
   const row2 = $('#row2');
   const gameLink = document.getElementById("game-link");
   const rulesLink = document.getElementById("rules-link");
+  const body = $("body");
 
   rulesLink.addEventListener('click', (e) => {
     row1.fadeOut(400, function(){
@@ -20,6 +21,10 @@ $( document ).ready(function() {
       refreshBoard(board);
     });
   });
+  if (colors) {
+    body.css({"background-color": colors.lessDark, "color": "white"})
+
+  }
   row2.hide();
   // row2.css("opacity", 1);
 });
