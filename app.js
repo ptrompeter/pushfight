@@ -1115,9 +1115,14 @@ function getScale(){
   const column = document.getElementById("game-column");
   const bb = column.getBoundingClientRect();
   let width = bb.right - bb.left;
+  const $w = $(window)
+  let bottomEdgeY = $w.scrollTop() + $w.height();
+  let netHeight = bottomEdgeY - bb.top;
   let absScale = width / 400;
   let relScale = width / canvas.width;
-  return {absScale: absScale, relScale: relScale}
+  let absHScale = netHeight / 600;
+  let relHScale = netHeight / canvas.height;
+  return (absScale <= absHScale) ? {absScale: absScale, relScale: relScale} : {absScale: absHScale, relScale: relHScale}
 }
 
 //adding a function to detect intersection between a click and my boxes
