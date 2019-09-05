@@ -1,8 +1,5 @@
 "use strict";
 
-// Potential color scheme: Harbor
-// Hex: 354649 / 6C7A89 / A3C6C4 / E0E7E9
-//Added alternate color scheme options. changeScheme will change it.
 const harbor = {
   "dark": "#354649",
   "lessDark": "#6C7A89",
@@ -44,6 +41,9 @@ const scuba = {
 }
 
 let colors = harbor;
+
+$( document ).ready(function() {
+
 //define scale variable, to be used in board rescaling.
 let scale = 1;
 
@@ -228,6 +228,7 @@ function changeScheme(colorObj = false, colorStr = false) {
   Object.values(board).forEach(function(value){
     value.color = (value.text) ? colors.dark : colors.lessLight;
   })
+  board.winner.color = colors.lessLight;
   refreshBoard(board);
   //match background color:
   $body.css({"background-color": colors.lessDark});
@@ -1162,3 +1163,5 @@ canvas.addEventListener('click', (e) => {
 //Adding a call to start the game on page load.
 startGame();
 canvasInit();
+console.log(board);
+});
