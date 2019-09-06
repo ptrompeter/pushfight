@@ -18,7 +18,8 @@ $( document ).ready(function() {
   gameLink.addEventListener('click', (e) => {
     row2.fadeOut(400, function(){
       row1.fadeIn(400);
-      refreshBoard(board);
+      resize();
+      // refreshBoard(board);
     });
   });
   if (colors) {

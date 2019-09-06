@@ -42,7 +42,7 @@ const scuba = {
 
 let colors = harbor;
 
-$( document ).ready(function() {
+// $( document ).ready(function() {
 
 //define scale variable, to be used in board rescaling.
 let scale = 1;
@@ -597,6 +597,24 @@ function showControls(){
   showSpace(board.done);
 }
 
+//Repopulate and show reserves (for reset)
+//TODO: added this function to fix reset problem.  Could be improved with refactor.
+function resetReserves(){
+  board.player_1RoundReserve.num = 2;
+  board.player_1RoundReserve.piece = "player_1Round";
+  showSpace(board.player_1RoundReserve);
+  board.player_1SquareReserve.num = 3;
+  board.player_1SquareReserve.piece = "player_1Square";
+  showSpace(board.player_1SquareReserve);
+  board.player_2SquareReserve.num = 3;
+  board.player_2SquareReserve.piece = "player_2Square";
+  showSpace(board.player_2SquareReserve);
+  board.player_2RoundReserve.num = 2;
+  board.player_2RoundReserve.piece = "player_2Round";
+  showSpace(board.player_2RoundReserve);
+  // populateReserves();
+}
+
 //Function to change active player
 function changePlayer() {
   turn.player = (turn.player == "player_1") ? "player_2" : "player_1";
@@ -772,13 +790,18 @@ function handleGame(space) {
     turn.phase = "move_1";
     turn.winner = false;
     moveControl.space = false;
+    if (anchorSquare) {
+      anchorSquare.hasAnchor = false;
+      anchorSquare = false;
+    }
     Object.values(board).forEach(function(value){
       if (value.placeable) value.piece = false;
     });
     //Handling showing the controls here.
     showControls();
     hideSpace(board.winner);
-    addReserves();
+    resetReserves();
+    // addReserves();
     refreshBoard(board);
   }
   if (space.name == "color") changeScheme();
@@ -796,11 +819,13 @@ function handleGame(space) {
 
 //Manage setup.
 function handleSetup(space){
+  console.log("hit handleSetup")
   if (space.name == "done") return resolveDone();
   if (testReserve(space) && space.num < 1) return "Reserve Empty";
   if (!moveControl.space) {
     if (!space.piece) return "Select a tile with one of your pieces.";
     if (!matchPiece(space)) return "You can only move your own pieces during setup.";
+    console.log("hit highlight.");
     highlightSquare(space);
     moveControl.space = space;
     return("handleSetup finished.")
@@ -1088,20 +1113,26 @@ function canvasInit() {
     // ctx = canvas.getContext("2d");
     window.addEventListener('resize', resize, false);
     window.addEventListener('orientationchange', resize, false);
+    // if (canvas.style.display == "block") resize();
     resize();
   }
 }
 
 function resize(){
+  console.log("in resize");
   //get relative scales of box and canvas.
   let scaleObj = getScale();
+  console.log("ran getScale");
+  console.log("scaleObj", scaleObj);
   //set scale variable to absolute scale relative to 400 to correct for piece drawings.
   scale = scaleObj.absScale
   //rescale board coordinates with relative scale
   resizeBoard(scaleObj.relScale);
+  console.log("hit resizeBoard");
   //resize canvas with relative scale
   canvas.width *= scaleObj.relScale
   canvas.height *= scaleObj.relScale
+  console.log("canvas width:", canvas.width, "canvas height:", canvas.height);
   //redraw board
   refreshBoard(board);
 }
@@ -1164,4 +1195,4 @@ canvas.addEventListener('click', (e) => {
 startGame();
 canvasInit();
 console.log(board);
-});
+// });
