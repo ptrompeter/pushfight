@@ -819,13 +819,11 @@ function handleGame(space) {
 
 //Manage setup.
 function handleSetup(space){
-  console.log("hit handleSetup")
   if (space.name == "done") return resolveDone();
   if (testReserve(space) && space.num < 1) return "Reserve Empty";
   if (!moveControl.space) {
     if (!space.piece) return "Select a tile with one of your pieces.";
     if (!matchPiece(space)) return "You can only move your own pieces during setup.";
-    console.log("hit highlight.");
     highlightSquare(space);
     moveControl.space = space;
     return("handleSetup finished.")
@@ -970,7 +968,6 @@ function addFourSides(board, space){
 //return an object with a sub-object for each square on a standard board,
 //plus skip and done boxes.  Piece reserves come from addReserves.
 function standardBoard(){
-  console.log("In standardBoard")
   let board = {};
   const nameArray = ["done", "skip", "color"];
   board = addPlayableSpaces(board, boardSpaces);
@@ -1113,38 +1110,27 @@ function canvasInit() {
     // ctx = canvas.getContext("2d");
     window.addEventListener('resize', resize, false);
     window.addEventListener('orientationchange', resize, false);
-    //BUGHUNT: Trying to resize only on display block to avoid everything being set to 0.
     if (canvas.style.display === "block") resize();
     // resize();
   }
 }
 
 function resize(){
-  //BUGHUNT: Putting this whole thing in a conditional to avoid redrawing to 0.
+  //Limit this function to run only when canvas is not hidden.
   if (canvas.style.display === "block"){
-    console.log("in resize");
-    console.log("canvas style:", canvas.style);
     //get relative scales of box and canvas.
-    //BUGHUNT: if board is messed up, calculate from column width and try again
+    //if board is messed up, calculate from column width and try again
     if (canvas.width == 0 || canvas.height == 0) {
-      console.log("in width or height 0 conditional.")
       const bb = document.getElementById("game-column").getBoundingClientRect();
-      console.log("bb:", bb);
       canvas.width = bb.right - bb.left;
       canvas.height = canvas.width * 1.5;
-      console.log("width:", canvas.width, "height:", canvas.height)
     }
     let scaleObj = getScale();
-    console.log("ran getScale");
-    console.log("scaleObj", scaleObj);
     //set scale variable to absolute scale relative to 400 to correct for piece drawings.
-    //BUGHUNT: prevent scale from becoming 0.
+    //prevent scale from becoming 0.
     if (scaleObj.absScale) scale = scaleObj.absScale;
-    console.log("scale", scale);
-    // scale = scaleObj.absScale
     //rescale board coordinates with relative scale
     resizeBoard(scaleObj.relScale);
-    console.log("hit resizeBoard");
     //resize canvas with relative scale
     canvas.width *= scaleObj.relScale
     canvas.height *= scaleObj.relScale
@@ -1168,13 +1154,11 @@ function resizeBoard(scale) {
 
 //get the ratio of new window to default and current scales
 function getScale(){
-  console.log("in getScale");
   const column = document.getElementById("game-column");
   const bb = column.getBoundingClientRect();
   let width = bb.right - bb.left;
   const $w = $(window);
   let bottomEdgeY = $w.scrollTop() + $w.height();
-  console.log("width", width, "scale", scale, "bb:", bb, "bottomEdgeY", bottomEdgeY);
   let netHeight = bottomEdgeY - bb.top;
   let absScale = width / 400;
   let relScale = width / canvas.width;
