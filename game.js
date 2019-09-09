@@ -1114,40 +1114,46 @@ function canvasInit() {
     window.addEventListener('resize', resize, false);
     window.addEventListener('orientationchange', resize, false);
     //BUGHUNT: Trying to resize only on display block to avoid everything being set to 0.
-    if (canvas.style.display == "block") resize();
+    if (canvas.style.display === "block") resize();
     // resize();
   }
 }
 
 function resize(){
-  console.log("in resize");
-  //get relative scales of box and canvas.
-  //BUGHUNT: if board is messed up, calculate from column width and try again
-  if (canvas.width == 0 || canvas.height == 0) {
-    console.log("in width or height 0 conditional.")
-    const bb = document.getElementById("game-column").getBoundingClientRect();
-    console.log("bb:", bb);
-    canvas.width = bb.right - bb.left;
-    canvas.hight = canvas.width * 1.5;
-  }
-  let scaleObj = getScale();
-  console.log("ran getScale");
-  console.log("scaleObj", scaleObj);
-  //set scale variable to absolute scale relative to 400 to correct for piece drawings.
-  //BUGHUNT: prevent scale from becoming 0.
-  if (scaleObj.absScale) scale = scaleObj.absScale;
-  console.log("scale", scale);
-  // scale = scaleObj.absScale
-  //rescale board coordinates with relative scale
-  resizeBoard(scaleObj.relScale);
-  console.log("hit resizeBoard");
-  //resize canvas with relative scale
-  canvas.width *= scaleObj.relScale
-  canvas.height *= scaleObj.relScale
-  console.log("canvas width:", canvas.width, "canvas height:", canvas.height);
+  //BUGHUNT: Putting this whole thing in a conditional to avoid redrawing to 0.
+  if (canvas.style.display === "block"){
+    console.log("in resize");
+    console.log("canvas style:", canvas.style);
+    //get relative scales of box and canvas.
+    //BUGHUNT: if board is messed up, calculate from column width and try again
+    if (canvas.width == 0 || canvas.height == 0) {
+      console.log("in width or height 0 conditional.")
+      const bb = document.getElementById("game-column").getBoundingClientRect();
+      console.log("bb:", bb);
+      canvas.width = bb.right - bb.left;
+      canvas.height = canvas.width * 1.5;
+      console.log("width:", canvas.width, "height:", canvas.height)
+    }
+    let scaleObj = getScale();
+    console.log("ran getScale");
+    console.log("scaleObj", scaleObj);
+    //set scale variable to absolute scale relative to 400 to correct for piece drawings.
+    //BUGHUNT: prevent scale from becoming 0.
+    if (scaleObj.absScale) scale = scaleObj.absScale;
+    console.log("scale", scale);
+    // scale = scaleObj.absScale
+    //rescale board coordinates with relative scale
+    resizeBoard(scaleObj.relScale);
+    console.log("hit resizeBoard");
+    //resize canvas with relative scale
+    canvas.width *= scaleObj.relScale
+    canvas.height *= scaleObj.relScale
+    console.log("canvas width:", canvas.width, "canvas height:", canvas.height);
 
-  //redraw board
-  refreshBoard(board);
+    //redraw board
+    refreshBoard(board);
+  }
+
 }
 //BUGHUNT: Preventing resize when scale = 0.
 function resizeBoard(scale) {
