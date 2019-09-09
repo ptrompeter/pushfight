@@ -1113,19 +1113,31 @@ function canvasInit() {
     // ctx = canvas.getContext("2d");
     window.addEventListener('resize', resize, false);
     window.addEventListener('orientationchange', resize, false);
-    // if (canvas.style.display == "block") resize();
-    resize();
+    //BUGHUNT: Trying to resize only on display block to avoid everything being set to 0.
+    if (canvas.style.display == "block") resize();
+    // resize();
   }
 }
 
 function resize(){
   console.log("in resize");
   //get relative scales of box and canvas.
+  //BUGHUNT: if board is messed up, calculate from column width and try again
+  if (canvas.width == 0 || canvas.height == 0) {
+    console.log("in width or height 0 conditional.")
+    const bb = document.getElementById("game-column").getBoundingClientRect();
+    console.log("bb:", bb);
+    canvas.width = bb.right - bb.left;
+    canvas.hight = canvas.width * 1.5;
+  }
   let scaleObj = getScale();
   console.log("ran getScale");
   console.log("scaleObj", scaleObj);
   //set scale variable to absolute scale relative to 400 to correct for piece drawings.
-  scale = scaleObj.absScale
+  //BUGHUNT: prevent scale from becoming 0.
+  if (scaleObj.absScale) scale = scaleObj.absScale;
+  console.log("scale", scale);
+  // scale = scaleObj.absScale
   //rescale board coordinates with relative scale
   resizeBoard(scaleObj.relScale);
   console.log("hit resizeBoard");
@@ -1133,25 +1145,30 @@ function resize(){
   canvas.width *= scaleObj.relScale
   canvas.height *= scaleObj.relScale
   console.log("canvas width:", canvas.width, "canvas height:", canvas.height);
+
   //redraw board
   refreshBoard(board);
 }
-
-function resizeBoard(scale){
-  let attrArray = ["x", "y", "width", "height", "oldWidth", "oldHeight"]
-  Object.values(board).forEach(function(value){
-    attrArray.forEach((str) => value[str] *= scale);
-    if (value.textSize) value.textSize *= scale;
-  });
+//BUGHUNT: Preventing resize when scale = 0.
+function resizeBoard(scale) {
+  if (scale) {
+    let attrArray = ["x", "y", "width", "height", "oldWidth", "oldHeight"]
+    Object.values(board).forEach(function(value){
+      attrArray.forEach((str) => value[str] *= scale);
+      if (value.textSize) value.textSize *= scale;
+    });
+  }
 }
 
 //get the ratio of new window to default and current scales
 function getScale(){
+  console.log("in getScale");
   const column = document.getElementById("game-column");
   const bb = column.getBoundingClientRect();
   let width = bb.right - bb.left;
-  const $w = $(window)
+  const $w = $(window);
   let bottomEdgeY = $w.scrollTop() + $w.height();
+  console.log("width", width, "scale", scale, "bb:", bb, "bottomEdgeY", bottomEdgeY);
   let netHeight = bottomEdgeY - bb.top;
   let absScale = width / 400;
   let relScale = width / canvas.width;
