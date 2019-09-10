@@ -330,8 +330,8 @@ function drawPoly(offsetObj, coords, options = arrow.options){
 function addSquare(offsetObj, color, options = {}) {
   let {width, height, x, y} = offsetObj;
   if (options == {}) {
-    simpleRect(30, 30, color, space.x + 10, space.y + 10);
-    myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
+    simpleRect(30, 30, color, x + 10, y + 10);
+    myGameArea.context.strokeRect(x + 10, y + 10, 30, 30);
   }  else {
     let {width, height, x, y} = options;
     simpleRect(width, height, color, x, y);
@@ -1106,13 +1106,13 @@ async function testAnimate(board){
 
 async function animateMove(startSpace, endSpace){
   ctx.save();
-  let offsetObj = {}
-  offsetObj.x = startSpace.x;
-  offsetObj.y = startSpace.y;
-  offsetObj.height = startSpace.height;
-  offsetObj.width = startSpace.width;
-  offsetObj.color = (startSpace.piece[7] == "1") ? colors.light : colors.dark;
-  console.log("offsetObj", offsetObj);
+  let options = {}
+  options.x = startSpace.x + 10 * scale;
+  options.y = startSpace.y + 10 * scale;
+  options.height = 30 * scale;
+  options.width = 30 * scale;
+  options.color = (startSpace.piece[7] == "1") ? colors.light : colors.dark;
+  console.log("options", options);
   let piece = startSpace.piece;
   startSpace.piece = false;
   updateSpace(startSpace);
@@ -1125,15 +1125,15 @@ async function animateMove(startSpace, endSpace){
       const intr = window.setInterval(function(){
         console.log("inside setInterval");
         refreshBoard(board);
-        addSquare(offsetObj, offsetObj.color);
-        ++offsetObj.x;
-        console.log(offsetObj.x);
-        if (offsetObj.x >= endSpace.x) {
+        addSquare(startSpace, options.color, options);
+        ++options.x;
+        console.log(options.x);
+        if (options.x >= endSpace.x) {
           window.clearInterval(intr);
           console.log("hit line after clearInterval")
           resolve("interval cleared.");
         };
-      }, 50);
+      }, 10);
     }
   });
   let result = await promise;
