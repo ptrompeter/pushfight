@@ -1098,13 +1098,13 @@ function player_2Win(board){
 }
 
 //try to animate a piece from one space to an adjacent space.
-function testAnimate(board){
+async function testAnimate(board){
   drawAnyPiece(board.c8, "player_1Square");
-  animateMove(board.c8, board.d8);
-
+  let outcome = await animateMove(board.c8, board.d8);
+  return outcome;
 }
 
-function animateMove(startSpace, endSpace){
+async function animateMove(startSpace, endSpace){
   ctx.save();
   let offsetObj = {}
   offsetObj.x = startSpace.x;
@@ -1120,23 +1120,34 @@ function animateMove(startSpace, endSpace){
   let endY = endSpace.y;
   console.log("startSpace.x", startSpace.x, "endSpace.x", endSpace.x);
   console.log("startX < endX?", (startSpace.x < endSpace.x));
-  if (startSpace.x < endSpace.x) {
-    while (offsetObj.x < endSpace.x) {
-      console.log("inside while loop");
-      console.log("offsetObj.x", offsetObj.x, "endSpace.x", endSpace.x);
-      addSquare(offsetObj, offsetObj.color);
-      console.log("finished addsquare");
-      console.log(window.setTimeout);
-      window.setTimeout(function() {
-        console.log('Inside window function');
+  let promise = new Promise((resolve, reject) => {
+    if (startSpace.x < endSpace.x) {
+      const intr = window.setInterval(function(){
+        console.log("inside setInterval");
         refreshBoard(board);
-      }, 20);
-      ++offsetObj.x;
+        addSquare(offsetObj, offsetObj.color);
+        ++offsetObj.x;
+        console.log(offsetObj.x);
+        if (offsetObj.x >= endSpace.x) {
+          window.clearInterval(intr);
+          console.log("hit line after clearInterval")
+          resolve("interval cleared.");
+        };
+      }, 50);
     }
-
+  });
+  let result = await promise;
+  if (promise) {
+    ctx.restore();
+    endSpace.piece = piece;
+    refreshBoard(board);
+    return "promise was true";
+  } else {
+    ctx.restore();
+    endSpace.piece = piece;
+    refreshBoard(board);
+    return "promise was false";
   }
-  endSpace.piece = piece;
-  refreshBoard(board);
 }
 
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
