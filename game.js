@@ -1097,6 +1097,47 @@ function player_2Win(board){
   turn.phase = "push";
 }
 
+//try to animate a piece from one space to an adjacent space.
+function testAnimate(board){
+  drawAnyPiece(board.c8, "player_1Square");
+  animateMove(board.c8, board.d8);
+
+}
+
+function animateMove(startSpace, endSpace){
+  ctx.save();
+  let offsetObj = {}
+  offsetObj.x = startSpace.x;
+  offsetObj.y = startSpace.y;
+  offsetObj.height = startSpace.height;
+  offsetObj.width = startSpace.width;
+  offsetObj.color = (startSpace.piece[7] == "1") ? colors.light : colors.dark;
+  console.log("offsetObj", offsetObj);
+  let piece = startSpace.piece;
+  startSpace.piece = false;
+  updateSpace(startSpace);
+  let endX = endSpace.x;
+  let endY = endSpace.y;
+  console.log("startSpace.x", startSpace.x, "endSpace.x", endSpace.x);
+  console.log("startX < endX?", (startSpace.x < endSpace.x));
+  if (startSpace.x < endSpace.x) {
+    while (offsetObj.x < endSpace.x) {
+      console.log("inside while loop");
+      console.log("offsetObj.x", offsetObj.x, "endSpace.x", endSpace.x);
+      addSquare(offsetObj, offsetObj.color);
+      console.log("finished addsquare");
+      console.log(window.setTimeout);
+      window.setTimeout(function() {
+        console.log('Inside window function');
+        refreshBoard(board);
+      }, 20);
+      ++offsetObj.x;
+    }
+
+  }
+  endSpace.piece = piece;
+  refreshBoard(board);
+}
 
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
 function startGame() {
