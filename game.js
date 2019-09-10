@@ -712,6 +712,8 @@ function skip(){
     moveControl.space = false;
   }
   while (turn.phase != "push"){
+    highlightSquare(board.skip);
+    window.setTimeout(function(){refreshBoard(board);}, 150);
     advanceTurn();
   }
   return "Advancing turn to push phase."
@@ -857,6 +859,8 @@ function resolveDone(){
   if (board[player + "RoundReserve"].num != 0) return "You must place all your pieces.";
   if (player == "player_1") {
     changePlayer();
+    highlightSquare(board.done)
+    window.setTimeout(function(){refreshBoard(board);}, 150);
     return "Player 2: Place your Pieces.";
   } else {
     turn.setup = false;
@@ -867,6 +871,8 @@ function resolveDone(){
     hideSpace(board.player_2RoundReserve);
     changePlayer();
     refreshBoard(board);
+    highlightSquare(board.done)
+    window.setTimeout(function(){refreshBoard(board);}, 150);
     return "Player 1: you move first.";
   }
 }
