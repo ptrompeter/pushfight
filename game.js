@@ -769,6 +769,7 @@ function handlePush(space) {
     //Cleanup commands to run on execution of legal push.
     if (pushControl.trueStrings.includes(message)) {
       pushControl.clearArrows();
+      animatePush(pushControl.space, direction);
       pushControl.reset();
       if (detectWin()) {
         return handleEndGame(turn.winner, "Nice push!");
@@ -1104,6 +1105,9 @@ async function testAnimate(board){
   return outcome;
 }
 
+/*This is essentially a test function to see if I can make a box move.
+To animate a push, I'm going to need to grab x number of adjacent pieces from
+consecutive squares, and be able to draw them regardless of shape and color. */
 async function animateMove(startSpace, endSpace){
   ctx.save();
   let options = {}
@@ -1149,6 +1153,87 @@ async function animateMove(startSpace, endSpace){
     return "promise was false";
   }
 }
+
+function animatePush(space, direction){
+  //make a list of pieces in a direction
+  let pieceArray = [];
+  let iter = 0;
+  function pieceGrabber(space, direction) {
+    if (space.piece) {
+      pieceArray.push(space.piece);
+      pieceGrabber(space[direction], direction)
+    }
+  }
+  pieceGrabber(space, direction);
+  const interval = window.setInterval(function(){
+    console.log("in the interval");
+    refreshBoard(board);
+    redrawPieces(space, direction, pieceArray, iter);
+    ++iter;
+    if (iter * 2 > 50 * scale) {
+      window.clearInterval(interval);
+      console.log("interval cleared.");
+    }
+  }, 15);
+
+
+  //write a setInterval to run a function that redraws x objects
+}
+
+function redrawPieces(space, direction, array, iter){
+  //forEach element of array
+  array.forEach(function(piece, idx){
+    //generate an options object
+    let optionsObj = {};
+    optionsObj.x = space.x;
+    optionsObj.y = space.y;
+    //get total transposition value
+    let bonusOffset = 50 * idx * scale + iter * 2;
+    //apply it in the right direction
+    if ( direction === "up") optionsObj.y -= bonusOffset;
+    if (direction === "down") optionsObj.y += bonusOffset;
+    if (direction === "left") optionsObj.x -= bonusOffset;
+    if (direction === "right") optionsObj.x += bonusOffset;
+    //set color
+    optionsObj.color = (piece[7] === "1") ? colors.light : colors.dark;
+    //conditional for square or circle
+    if (piece[8] === "S") {
+      //add additional details for square placement
+      optionsObj.width = 30 * scale;
+      optionsObj.height = 30 * scale;
+      optionsObj.x += 10 * scale;
+      optionsObj.y += 10 * scale;
+      addSquare(space, optionsObj.color, optionsObj);
+    } else {
+      //add details for circle placement
+      optionsObj.radius = 15 * scale;
+      optionsObj.x += 25 * scale;
+      optionsObj.y += 25 * scale;
+      addCircle(space, optionsObj.color, optionsObj);
+    }
+  });
+}
+//COPIED THE BELOW FOR EASY REFERENCE
+// function addSquare(offsetObj, color, options = {}) {
+//   let {width, height, x, y} = offsetObj;
+//   if (options == {}) {
+//     simpleRect(30, 30, color, x + 10, y + 10);
+//     myGameArea.context.strokeRect(x + 10, y + 10, 30, 30);
+//   }  else {
+//     let {width, height, x, y} = options;
+//     simpleRect(width, height, color, x, y);
+//     myGameArea.context.strokeRect(x, y, width, height);
+//   }
+// }
+// function addCircle(offsetObj, color, options = {}) {
+//   let {width, height, x, y} = offsetObj;
+//   if (options == {}) {
+//     drawCircle(15, color, x + (width / 2), y + (height / 2));
+//   } else {
+//     let {radius, x, y} = options;
+//     drawCircle(radius, color, x, y);
+//   }
+// }
 
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
 function startGame() {
