@@ -539,7 +539,8 @@ function pushPiece(space, direction, test = false) {
   }
   if (code == "push_ok") {
     if (!test) {
-      move(space, space[direction])
+      //Going to try to handle move in animatePush
+      // move(space, space[direction])
       return code;
     } else {
       return code;
@@ -741,7 +742,7 @@ function testEmptyPath(startSpace, endSpace) {
 }
 
 //Handle game logic during a Push phase
-function handlePush(space) {
+async function handlePush(space) {
   //Handle selection of piece to be pushed
   if (!pushControl.space) {
     //Handle illegal piece choices: wrong color, wrong shape, empty square
@@ -769,7 +770,8 @@ function handlePush(space) {
     //Cleanup commands to run on execution of legal push.
     if (pushControl.trueStrings.includes(message)) {
       pushControl.clearArrows();
-      animatePush(pushControl.space, direction);
+      //trying to make animatePush work here.
+      await animatePush(pushControl.space, direction);
       pushControl.reset();
       if (detectWin()) {
         return handleEndGame(turn.winner, "Nice push!");
@@ -1154,30 +1156,49 @@ async function animateMove(startSpace, endSpace){
   }
 }
 
-function animatePush(space, direction){
+async function animatePush(space, direction){
   //make a list of pieces in a direction
   let pieceArray = [];
   let iter = 0;
   function pieceGrabber(space, direction) {
     if (space.piece) {
       pieceArray.push(space.piece);
+      //erase pieces as you go
+      space.piece = false;
       pieceGrabber(space[direction], direction)
     }
   }
   pieceGrabber(space, direction);
-  const interval = window.setInterval(function(){
-    console.log("in the interval");
+  //promisify outcome of setInterval
+  let promise = new Promise((resolve, reject) => {
+    //write a setInterval to run a function that redraws x objects
+    const interval = window.setInterval(function() {
+      console.log("in the interval");
+      refreshBoard(board);
+      redrawPieces(space, direction, pieceArray, iter);
+      ++iter;
+      if (iter * 2 > 50 * scale) {
+        window.clearInterval(interval);
+        resolve("interval cleared.");
+      }
+    }, 15);
+  });
+  let result = await promise;
+  //apply pieces after animation
+  if (result) {
+    let cursor = space[direction];
+    pieceArray.forEach(function(piece){
+      cursor.piece = piece;
+      cursor = cursor[direction];
+    });
+    //refresh board
     refreshBoard(board);
-    redrawPieces(space, direction, pieceArray, iter);
-    ++iter;
-    if (iter * 2 > 50 * scale) {
-      window.clearInterval(interval);
-      console.log("interval cleared.");
-    }
-  }, 15);
+  } else {
+    return "Something is broken."
+  }
 
 
-  //write a setInterval to run a function that redraws x objects
+
 }
 
 function redrawPieces(space, direction, array, iter){
