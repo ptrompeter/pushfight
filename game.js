@@ -503,6 +503,7 @@ function firstPush(space, direction, test = false) {
 for legal pushes without moving pieces.  (Having
 no legal pushes after one's moves is a lose
 condition.) */
+//TODO: This could use a refactor now that animatePush exists.
 function pushPiece(space, direction, test = false) {
   if (space == anchorSquare || !space.pushable) {
     return "blocked";
@@ -538,13 +539,7 @@ function pushPiece(space, direction, test = false) {
     return "blocked";
   }
   if (code == "push_ok") {
-    if (!test) {
-      //Going to try to handle move in animatePush
-      // move(space, space[direction])
-      return code;
-    } else {
-      return code;
-    }
+    return code;
   }
   return "something unexpected happened.";
 }
@@ -1100,62 +1095,7 @@ function player_2Win(board){
   turn.phase = "push";
 }
 
-//try to animate a piece from one space to an adjacent space.
-async function testAnimate(board){
-  drawAnyPiece(board.c8, "player_1Square");
-  let outcome = await animateMove(board.c8, board.d8);
-  return outcome;
-}
-
-/*This is essentially a test function to see if I can make a box move.
-To animate a push, I'm going to need to grab x number of adjacent pieces from
-consecutive squares, and be able to draw them regardless of shape and color. */
-async function animateMove(startSpace, endSpace){
-  ctx.save();
-  let options = {}
-  options.x = startSpace.x + 10 * scale;
-  options.y = startSpace.y + 10 * scale;
-  options.height = 30 * scale;
-  options.width = 30 * scale;
-  options.color = (startSpace.piece[7] == "1") ? colors.light : colors.dark;
-  console.log("options", options);
-  let piece = startSpace.piece;
-  startSpace.piece = false;
-  updateSpace(startSpace);
-  let endX = endSpace.x;
-  let endY = endSpace.y;
-  console.log("startSpace.x", startSpace.x, "endSpace.x", endSpace.x);
-  console.log("startX < endX?", (startSpace.x < endSpace.x));
-  let promise = new Promise((resolve, reject) => {
-    if (startSpace.x < endSpace.x) {
-      const intr = window.setInterval(function(){
-        console.log("inside setInterval");
-        refreshBoard(board);
-        addSquare(startSpace, options.color, options);
-        ++options.x;
-        console.log(options.x);
-        if (options.x >= endSpace.x) {
-          window.clearInterval(intr);
-          console.log("hit line after clearInterval")
-          resolve("interval cleared.");
-        };
-      }, 10);
-    }
-  });
-  let result = await promise;
-  if (promise) {
-    ctx.restore();
-    endSpace.piece = piece;
-    refreshBoard(board);
-    return "promise was true";
-  } else {
-    ctx.restore();
-    endSpace.piece = piece;
-    refreshBoard(board);
-    return "promise was false";
-  }
-}
-
+//Runs an animation to push pieces.  TODO: Reorganize? Maybe larger push refactor.
 async function animatePush(space, direction){
   //make a list of pieces in a direction
   let pieceArray = [];
@@ -1196,11 +1136,8 @@ async function animatePush(space, direction){
   } else {
     return "Something is broken."
   }
-
-
-
 }
-
+//Draw a series of pieces in a direction (used in animatePush)
 function redrawPieces(space, direction, array, iter){
   //forEach element of array
   array.forEach(function(piece, idx){
@@ -1234,27 +1171,6 @@ function redrawPieces(space, direction, array, iter){
     }
   });
 }
-//COPIED THE BELOW FOR EASY REFERENCE
-// function addSquare(offsetObj, color, options = {}) {
-//   let {width, height, x, y} = offsetObj;
-//   if (options == {}) {
-//     simpleRect(30, 30, color, x + 10, y + 10);
-//     myGameArea.context.strokeRect(x + 10, y + 10, 30, 30);
-//   }  else {
-//     let {width, height, x, y} = options;
-//     simpleRect(width, height, color, x, y);
-//     myGameArea.context.strokeRect(x, y, width, height);
-//   }
-// }
-// function addCircle(offsetObj, color, options = {}) {
-//   let {width, height, x, y} = offsetObj;
-//   if (options == {}) {
-//     drawCircle(15, color, x + (width / 2), y + (height / 2));
-//   } else {
-//     let {radius, x, y} = options;
-//     drawCircle(radius, color, x, y);
-//   }
-// }
 
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
 function startGame() {
