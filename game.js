@@ -330,8 +330,8 @@ function drawPoly(offsetObj, coords, options = arrow.options){
 function addSquare(offsetObj, color, options = {}) {
   let {width, height, x, y} = offsetObj;
   if (options == {}) {
-    simpleRect(30, 30, color, x + 10, y + 10);
-    myGameArea.context.strokeRect(x + 10, y + 10, 30, 30);
+    simpleRect(30, 30, color, space.x + 10, space.y + 10);
+    myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   }  else {
     let {width, height, x, y} = options;
     simpleRect(width, height, color, x, y);
@@ -503,7 +503,6 @@ function firstPush(space, direction, test = false) {
 for legal pushes without moving pieces.  (Having
 no legal pushes after one's moves is a lose
 condition.) */
-//TODO: This could use a refactor now that animatePush exists.
 function pushPiece(space, direction, test = false) {
   if (space == anchorSquare || !space.pushable) {
     return "blocked";
@@ -539,7 +538,12 @@ function pushPiece(space, direction, test = false) {
     return "blocked";
   }
   if (code == "push_ok") {
-    return code;
+    if (!test) {
+      move(space, space[direction])
+      return code;
+    } else {
+      return code;
+    }
   }
   return "something unexpected happened.";
 }
@@ -579,17 +583,17 @@ function endTurn() {
 
 //Generate or reveal the reset tile on the board.  Draw seperately.
 function addReset(){
-  showSpace(board.reset);
+  showSpace(board.bigReset);
   hideSpace(board.color);
   hideSpace(board.skip);
-  hideSpace(board.done);
+  hideSpace(board.reset);
 }
 
 //Hide reset, show controls. Draw seperately.
 function showControls(){
-  hideSpace(board.reset);
+  hideSpace(board.bigReset);
   showSpace(board.color);
-  showSpace(board.skip);
+  showSpace(board.reset);
   showSpace(board.done);
 }
 
@@ -737,7 +741,7 @@ function testEmptyPath(startSpace, endSpace) {
 }
 
 //Handle game logic during a Push phase
-async function handlePush(space) {
+function handlePush(space) {
   //Handle selection of piece to be pushed
   if (!pushControl.space) {
     //Handle illegal piece choices: wrong color, wrong shape, empty square
@@ -765,8 +769,6 @@ async function handlePush(space) {
     //Cleanup commands to run on execution of legal push.
     if (pushControl.trueStrings.includes(message)) {
       pushControl.clearArrows();
-      //trying to make animatePush work here.
-      await animatePush(pushControl.space, direction);
       pushControl.reset();
       if (detectWin()) {
         return handleEndGame(turn.winner, "Nice push!");
@@ -784,7 +786,7 @@ async function handlePush(space) {
 
 //Manage game.
 function handleGame(space) {
-  if (space.name == "reset") {
+  if (space.name == "reset" || space.name == "bigReset") {
     turn.setup = true;
     turn.player = "player_1";
     turn.phase = "move_1";
@@ -870,7 +872,10 @@ function resolveDone(){
     changePlayer();
     refreshBoard(board);
     highlightSquare(board.done)
-    window.setTimeout(function(){refreshBoard(board);}, 150);
+    window.setTimeout(function(){
+      hideSpace(board.done);
+      showSpace(board.skip);
+      refreshBoard(board);}, 150);
     return "Player 1: you move first.";
   }
 }
@@ -973,7 +978,7 @@ function addFourSides(board, space){
 //plus skip and done boxes.  Piece reserves come from addReserves.
 function standardBoard(){
   let board = {};
-  const nameArray = ["done", "skip", "color"];
+  const nameArray = ["done", "reset", "color", "skip"];
   board = addPlayableSpaces(board, boardSpaces);
   nameArray.forEach(function(name, idx){
     let spaceExtras = {};
@@ -984,15 +989,20 @@ function standardBoard(){
     spaceExtras.y = 200.5 + 80 * idx;
     addSpaceToBoard(board, spaceExtras.name, spaceExtras, defaultControl);
   });
-  //add a reset button, then hide it.
+  //modify the skip button.
+  hideSpace(board.skip);
+  board.skip.x = board.done.x
+  board.skip.y = board.done.y
+  //add a big reset button for game end, then hide it.
   let spaceExtras = {};
-  spaceExtras.name = "reset";
-  spaceExtras.text = [spaceExtras.name.toUpperCase()];
+  spaceExtras.name = "bigReset";
+  spaceExtras.text = spaceExtras.name.toUpperCase();
+  spaceExtras.text = [spaceExtras.text.slice(3)];
   spaceExtras.width = 90;
   spaceExtras.x = 279.5;
   spaceExtras.y = 224.5;
   addSpaceToBoard(board, spaceExtras.name, spaceExtras, defaultControl);
-  hideSpace(board.reset);
+  hideSpace(board.bigReset);
 
   //add a winner box, then hide it.
   let winExtras = {};
@@ -1093,83 +1103,6 @@ function player_2Win(board){
   turn.setup = false;
   turn.player = "player_2";
   turn.phase = "push";
-}
-
-//Runs an animation to push pieces.  TODO: Reorganize? Maybe larger push refactor.
-async function animatePush(space, direction){
-  //make a list of pieces in a direction
-  let pieceArray = [];
-  let iter = 0;
-  function pieceGrabber(space, direction) {
-    if (space.piece) {
-      pieceArray.push(space.piece);
-      //erase pieces as you go
-      space.piece = false;
-      pieceGrabber(space[direction], direction)
-    }
-  }
-  pieceGrabber(space, direction);
-  //promisify outcome of setInterval
-  let promise = new Promise((resolve, reject) => {
-    //write a setInterval to run a function that redraws x objects
-    const interval = window.setInterval(function() {
-      console.log("in the interval");
-      refreshBoard(board);
-      redrawPieces(space, direction, pieceArray, iter);
-      ++iter;
-      if (iter * 2 > 50 * scale) {
-        window.clearInterval(interval);
-        resolve("interval cleared.");
-      }
-    }, 15);
-  });
-  let result = await promise;
-  //apply pieces after animation
-  if (result) {
-    let cursor = space[direction];
-    pieceArray.forEach(function(piece){
-      cursor.piece = piece;
-      cursor = cursor[direction];
-    });
-    //refresh board
-    refreshBoard(board);
-  } else {
-    return "Something is broken."
-  }
-}
-//Draw a series of pieces in a direction (used in animatePush)
-function redrawPieces(space, direction, array, iter){
-  //forEach element of array
-  array.forEach(function(piece, idx){
-    //generate an options object
-    let optionsObj = {};
-    optionsObj.x = space.x;
-    optionsObj.y = space.y;
-    //get total transposition value
-    let bonusOffset = 50 * idx * scale + iter * 2;
-    //apply it in the right direction
-    if ( direction === "up") optionsObj.y -= bonusOffset;
-    if (direction === "down") optionsObj.y += bonusOffset;
-    if (direction === "left") optionsObj.x -= bonusOffset;
-    if (direction === "right") optionsObj.x += bonusOffset;
-    //set color
-    optionsObj.color = (piece[7] === "1") ? colors.light : colors.dark;
-    //conditional for square or circle
-    if (piece[8] === "S") {
-      //add additional details for square placement
-      optionsObj.width = 30 * scale;
-      optionsObj.height = 30 * scale;
-      optionsObj.x += 10 * scale;
-      optionsObj.y += 10 * scale;
-      addSquare(space, optionsObj.color, optionsObj);
-    } else {
-      //add details for circle placement
-      optionsObj.radius = 15 * scale;
-      optionsObj.x += 25 * scale;
-      optionsObj.y += 25 * scale;
-      addCircle(space, optionsObj.color, optionsObj);
-    }
-  });
 }
 
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
