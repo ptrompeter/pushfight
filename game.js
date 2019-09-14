@@ -330,8 +330,8 @@ function drawPoly(offsetObj, coords, options = arrow.options){
 function addSquare(offsetObj, color, options = {}) {
   let {width, height, x, y} = offsetObj;
   if (options == {}) {
-    simpleRect(30, 30, color, x + 10, y + 10);
-    myGameArea.context.strokeRect(x + 10, y + 10, 30, 30);
+    simpleRect(30, 30, color, space.x + 10, space.y + 10);
+    myGameArea.context.strokeRect(space.x + 10, space.y + 10, 30, 30);
   }  else {
     let {width, height, x, y} = options;
     simpleRect(width, height, color, x, y);
@@ -579,17 +579,18 @@ function endTurn() {
 
 //Generate or reveal the reset tile on the board.  Draw seperately.
 function addReset(){
-  showSpace(board.reset);
+  showSpace(board.bigReset);
   hideSpace(board.color);
   hideSpace(board.skip);
-  hideSpace(board.done);
+  hideSpace(board.reset);
 }
 
 //Hide reset, show controls. Draw seperately.
 function showControls(){
-  hideSpace(board.reset);
+  hideSpace(board.bigReset);
+  hideSpace(board.skip);
   showSpace(board.color);
-  showSpace(board.skip);
+  showSpace(board.reset);
   showSpace(board.done);
 }
 
@@ -781,13 +782,12 @@ async function handlePush(space) {
     }
   }
 }
-
 //Manage game.
 function handleGame(space) {
-  if (space.name == "reset") {
+  if (space.name == "reset" || space.name == "bigReset") {
     turn.setup = true;
     turn.player = "player_1";
-    turn.phase = "move_1";
+    turn.phase = "move1";
     turn.winner = false;
     moveControl.space = false;
     if (anchorSquare) {
@@ -870,7 +870,10 @@ function resolveDone(){
     changePlayer();
     refreshBoard(board);
     highlightSquare(board.done)
-    window.setTimeout(function(){refreshBoard(board);}, 150);
+    window.setTimeout(function(){
+      hideSpace(board.done);
+      showSpace(board.skip);
+      refreshBoard(board);}, 150);
     return "Player 1: you move first.";
   }
 }
@@ -973,26 +976,32 @@ function addFourSides(board, space){
 //plus skip and done boxes.  Piece reserves come from addReserves.
 function standardBoard(){
   let board = {};
-  const nameArray = ["done", "skip", "color"];
+  const nameArray = ["done", "reset", "color", "skip"];
   board = addPlayableSpaces(board, boardSpaces);
   nameArray.forEach(function(name, idx){
     let spaceExtras = {};
     spaceExtras.name = name;
     spaceExtras.text = [name.toUpperCase()];
     spaceExtras.width = 80;
+    spaceExtras.oldWidth = 80;
     spaceExtras.x = 295.5;
     spaceExtras.y = 200.5 + 80 * idx;
     addSpaceToBoard(board, spaceExtras.name, spaceExtras, defaultControl);
   });
-  //add a reset button, then hide it.
+  //modify the skip button.
+  hideSpace(board.skip);
+  board.skip.x = board.done.x
+  board.skip.y = board.done.y
+  //add a big reset button for game end, then hide it.
   let spaceExtras = {};
-  spaceExtras.name = "reset";
-  spaceExtras.text = [spaceExtras.name.toUpperCase()];
+  spaceExtras.name = "bigReset";
+  spaceExtras.text = spaceExtras.name.toUpperCase();
+  spaceExtras.text = [spaceExtras.text.slice(3)];
   spaceExtras.width = 90;
   spaceExtras.x = 279.5;
   spaceExtras.y = 224.5;
   addSpaceToBoard(board, spaceExtras.name, spaceExtras, defaultControl);
-  hideSpace(board.reset);
+  hideSpace(board.bigReset);
 
   //add a winner box, then hide it.
   let winExtras = {};
