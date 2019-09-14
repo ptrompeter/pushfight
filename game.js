@@ -503,6 +503,7 @@ function firstPush(space, direction, test = false) {
 for legal pushes without moving pieces.  (Having
 no legal pushes after one's moves is a lose
 condition.) */
+//TODO: This could use a refactor now that animatePush exists.
 function pushPiece(space, direction, test = false) {
   if (space == anchorSquare || !space.pushable) {
     return "blocked";
@@ -538,12 +539,7 @@ function pushPiece(space, direction, test = false) {
     return "blocked";
   }
   if (code == "push_ok") {
-    if (!test) {
-      move(space, space[direction])
-      return code;
-    } else {
-      return code;
-    }
+    return code;
   }
   return "something unexpected happened.";
 }
@@ -592,6 +588,7 @@ function addReset(){
 //Hide reset, show controls. Draw seperately.
 function showControls(){
   hideSpace(board.bigReset);
+  hideSpace(board.skip);
   showSpace(board.color);
   showSpace(board.reset);
   showSpace(board.done);
@@ -741,7 +738,7 @@ function testEmptyPath(startSpace, endSpace) {
 }
 
 //Handle game logic during a Push phase
-function handlePush(space) {
+async function handlePush(space) {
   //Handle selection of piece to be pushed
   if (!pushControl.space) {
     //Handle illegal piece choices: wrong color, wrong shape, empty square
@@ -769,6 +766,8 @@ function handlePush(space) {
     //Cleanup commands to run on execution of legal push.
     if (pushControl.trueStrings.includes(message)) {
       pushControl.clearArrows();
+      //trying to make animatePush work here.
+      await animatePush(pushControl.space, direction);
       pushControl.reset();
       if (detectWin()) {
         return handleEndGame(turn.winner, "Nice push!");
@@ -783,13 +782,12 @@ function handlePush(space) {
     }
   }
 }
-
 //Manage game.
 function handleGame(space) {
   if (space.name == "reset" || space.name == "bigReset") {
     turn.setup = true;
     turn.player = "player_1";
-    turn.phase = "move_1";
+    turn.phase = "move1";
     turn.winner = false;
     moveControl.space = false;
     if (anchorSquare) {
@@ -985,6 +983,7 @@ function standardBoard(){
     spaceExtras.name = name;
     spaceExtras.text = [name.toUpperCase()];
     spaceExtras.width = 80;
+    spaceExtras.oldWidth = 80;
     spaceExtras.x = 295.5;
     spaceExtras.y = 200.5 + 80 * idx;
     addSpaceToBoard(board, spaceExtras.name, spaceExtras, defaultControl);
@@ -1103,6 +1102,83 @@ function player_2Win(board){
   turn.setup = false;
   turn.player = "player_2";
   turn.phase = "push";
+}
+
+//Runs an animation to push pieces.  TODO: Reorganize? Maybe larger push refactor.
+async function animatePush(space, direction){
+  //make a list of pieces in a direction
+  let pieceArray = [];
+  let iter = 0;
+  function pieceGrabber(space, direction) {
+    if (space.piece) {
+      pieceArray.push(space.piece);
+      //erase pieces as you go
+      space.piece = false;
+      pieceGrabber(space[direction], direction)
+    }
+  }
+  pieceGrabber(space, direction);
+  //promisify outcome of setInterval
+  let promise = new Promise((resolve, reject) => {
+    //write a setInterval to run a function that redraws x objects
+    const interval = window.setInterval(function() {
+      console.log("in the interval");
+      refreshBoard(board);
+      redrawPieces(space, direction, pieceArray, iter);
+      ++iter;
+      if (iter * 2 > 50 * scale) {
+        window.clearInterval(interval);
+        resolve("interval cleared.");
+      }
+    }, 15);
+  });
+  let result = await promise;
+  //apply pieces after animation
+  if (result) {
+    let cursor = space[direction];
+    pieceArray.forEach(function(piece){
+      cursor.piece = piece;
+      cursor = cursor[direction];
+    });
+    //refresh board
+    refreshBoard(board);
+  } else {
+    return "Something is broken."
+  }
+}
+//Draw a series of pieces in a direction (used in animatePush)
+function redrawPieces(space, direction, array, iter){
+  //forEach element of array
+  array.forEach(function(piece, idx){
+    //generate an options object
+    let optionsObj = {};
+    optionsObj.x = space.x;
+    optionsObj.y = space.y;
+    //get total transposition value
+    let bonusOffset = 50 * idx * scale + iter * 2;
+    //apply it in the right direction
+    if ( direction === "up") optionsObj.y -= bonusOffset;
+    if (direction === "down") optionsObj.y += bonusOffset;
+    if (direction === "left") optionsObj.x -= bonusOffset;
+    if (direction === "right") optionsObj.x += bonusOffset;
+    //set color
+    optionsObj.color = (piece[7] === "1") ? colors.light : colors.dark;
+    //conditional for square or circle
+    if (piece[8] === "S") {
+      //add additional details for square placement
+      optionsObj.width = 30 * scale;
+      optionsObj.height = 30 * scale;
+      optionsObj.x += 10 * scale;
+      optionsObj.y += 10 * scale;
+      addSquare(space, optionsObj.color, optionsObj);
+    } else {
+      //add details for circle placement
+      optionsObj.radius = 15 * scale;
+      optionsObj.x += 25 * scale;
+      optionsObj.y += 25 * scale;
+      addCircle(space, optionsObj.color, optionsObj);
+    }
+  });
 }
 
 //THIS FUNCTION DOES THE INITIAL CANVAS DRAWING OF THE BOARD
